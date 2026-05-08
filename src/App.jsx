@@ -1,1175 +1,911 @@
 import { useState, useEffect, useRef } from "react";
 
-const style = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700&family=Jost:wght@300;400;500&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --gold: #C9A84C;
-    --gold-light: #E8C97A;
-    --gold-pale: #F5E6C0;
-    --gold-dim: #8A6E30;
-    --navy-deep: #05070D;
-    --navy: #09111E;
-    --navy-mid: #111A2E;
-    --navy-light: #1A2640;
-    --navy-bright: #243050;
-    --crimson: #8B1A2E;
-    --crimson-light: #C4304A;
-    --teal: #0D6E7A;
-    --teal-light: #17A3B8;
-    --cream: #FAF5EC;
-    --text-light: #BDB09A;
-    --text-mid: #7A6E5E;
-    --ruby: #7A1522;
-    --amber: #B87333;
-  }
-  html { scroll-behavior: smooth; }
-  body { font-family: 'Jost', sans-serif; background: var(--navy-deep); color: var(--cream); overflow-x: hidden; }
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: var(--navy-deep); }
-  ::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, var(--gold), var(--crimson-light)); border-radius: 2px; }
-
-  /* NAVBAR */
-  .navbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-    padding: 0 52px; height: 88px;
-    display: flex; align-items: center; justify-content: space-between;
-    transition: all 0.6s cubic-bezier(0.4,0,0.2,1);
-  }
-  .navbar.scrolled {
-    background: rgba(5,7,13,0.97); backdrop-filter: blur(32px);
-    height: 68px; border-bottom: 1px solid rgba(201,168,76,0.18);
-    box-shadow: 0 4px 80px rgba(0,0,0,0.8);
-  }
-  .nav-logo { cursor: pointer; }
-  .nav-logo-title { font-family:'Cinzel',serif; font-size:16.5px; font-weight:700; color:var(--gold); letter-spacing:3.5px; }
-  .nav-logo-sub { font-size:8.5px; font-weight:300; color:var(--text-mid); letter-spacing:6px; text-transform:uppercase; margin-top:3px; }
-  .nav-links { display:flex; align-items:center; gap:30px; list-style:none; }
-  .nav-links a {
-    font-family:'Cinzel',serif; font-size:10px; color:var(--text-light);
-    text-decoration:none; letter-spacing:2.5px; text-transform:uppercase;
-    transition:color 0.3s; position:relative; padding-bottom:5px;
-  }
-  .nav-links a::after {
-    content:''; position:absolute; bottom:0; left:0; width:0; height:1px;
-    background:linear-gradient(90deg,var(--gold),var(--crimson-light));
-    transition:width 0.4s cubic-bezier(0.4,0,0.2,1);
-  }
-  .nav-links a:hover { color:var(--gold); }
-  .nav-links a:hover::after { width:100%; }
-  .nav-cta {
-    background:linear-gradient(135deg,var(--gold),var(--gold-light)) !important;
-    color:var(--navy-deep) !important; padding:10px 24px !important;
-    font-weight:700 !important; border-radius:2px; letter-spacing:2px !important;
-    box-shadow:0 0 30px rgba(201,168,76,0.25);
-    transition:all 0.35s cubic-bezier(0.4,0,0.2,1) !important;
-  }
-  .nav-cta::after { display:none !important; }
-  .nav-cta:hover { transform:translateY(-2px) !important; box-shadow:0 8px 36px rgba(201,168,76,0.55) !important; }
-
-  .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; z-index:1100; background:none; border:none; padding:4px; }
-  .hamburger span { display:block; width:26px; height:1.5px; background:var(--gold); transition:all 0.35s cubic-bezier(0.4,0,0.2,1); transform-origin:center; }
-  .hamburger.open span:nth-child(1) { transform:translateY(6.5px) rotate(45deg); }
-  .hamburger.open span:nth-child(2) { opacity:0; transform:scaleX(0); }
-  .hamburger.open span:nth-child(3) { transform:translateY(-6.5px) rotate(-45deg); }
-  .mobile-menu {
-    display:none; position:fixed; inset:0; z-index:1050;
-    background:rgba(5,7,13,0.99); backdrop-filter:blur(32px);
-    flex-direction:column; align-items:center; justify-content:center; gap:44px;
-    opacity:0; pointer-events:none; transition:opacity 0.45s;
-  }
-  .mobile-menu.open { opacity:1; pointer-events:all; }
-  .mobile-menu a { font-family:'Cinzel',serif; font-size:22px; color:var(--cream); text-decoration:none; letter-spacing:5px; transition:color 0.3s; }
-  .mobile-menu a:hover { color:var(--gold); }
-
-  /* HERO */
-  .hero { height:100vh; min-height:700px; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-  .hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse 140% 100% at 60% 20%, #150a20 0%, #0b0d1e 30%, #050712 70%, #05070d 100%); }
-  .hero-pattern {
-    position:absolute; inset:0; opacity:0.025;
-    background-image:repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(201,168,76,0.5) 39px, rgba(201,168,76,0.5) 40px),
-    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(201,168,76,0.5) 39px, rgba(201,168,76,0.5) 40px);
-  }
-  .hero-rings { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; overflow:hidden; }
-  .hero-ring { position:absolute; border-radius:50%; border:1px solid rgba(201,168,76,0.06); }
-  .hero-ring:nth-child(1) { width:480px; height:480px; animation:ringPulse 7s ease-in-out infinite; }
-  .hero-ring:nth-child(2) { width:780px; height:780px; animation:ringPulse 7s ease-in-out infinite 1.75s; border-color:rgba(139,26,46,0.06); }
-  .hero-ring:nth-child(3) { width:1080px; height:1080px; animation:ringPulse 7s ease-in-out infinite 3.5s; }
-  .hero-ring:nth-child(4) { width:1400px; height:1400px; animation:ringPulse 7s ease-in-out infinite 5.25s; border-color:rgba(139,26,46,0.04); }
-  @keyframes ringPulse { 0%,100%{transform:scale(1);opacity:0.35;} 50%{transform:scale(1.04);opacity:0.85;} }
-
-  .hero-orb { position:absolute; border-radius:50%; filter:blur(90px); pointer-events:none; }
-  .hero-orb-1 { width:700px; height:700px; background:radial-gradient(circle,rgba(80,30,130,0.22) 0%,transparent 60%); top:-250px; right:-200px; animation:orbDrift 13s ease-in-out infinite; }
-  .hero-orb-2 { width:500px; height:500px; background:radial-gradient(circle,rgba(139,26,46,0.12) 0%,transparent 60%); bottom:-150px; left:5%; animation:orbDrift 10s ease-in-out infinite reverse 2s; }
-  .hero-orb-3 { width:350px; height:350px; background:radial-gradient(circle,rgba(201,168,76,0.08) 0%,transparent 60%); top:35%; left:-100px; animation:orbDrift 16s ease-in-out infinite 4s; }
-  .hero-orb-4 { width:280px; height:280px; background:radial-gradient(circle,rgba(13,110,122,0.1) 0%,transparent 60%); bottom:20%; right:10%; animation:orbDrift 11s ease-in-out infinite 1s; }
-  @keyframes orbDrift { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(30px,-40px) scale(1.08);} 66%{transform:translate(-20px,22px) scale(0.95);} }
-
-  .hero-particles { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
-  .particle { position:absolute; border-radius:50%; background:var(--gold); animation:particleFloat linear infinite; }
-  .particle.crimson { background:var(--crimson-light); }
-  @keyframes particleFloat { 0%{transform:translateY(100vh) scale(0);opacity:0;} 10%{opacity:0.7;transform:translateY(80vh) scale(1);} 90%{opacity:0.2;} 100%{transform:translateY(-10vh) scale(0.4);opacity:0;} }
-
-  .hero-content { position:relative; z-index:2; text-align:center; padding:0 28px; max-width:1000px; }
-  .hero-badge {
-    display:inline-flex; align-items:center; gap:12px;
-    font-size:9.5px; font-weight:300; letter-spacing:9px; text-transform:uppercase;
-    color:var(--gold); border:1px solid rgba(201,168,76,0.3);
-    padding:10px 32px; margin-bottom:44px;
-    animation:heroFadeDown 1.2s cubic-bezier(0.4,0,0.2,1) both;
-    position:relative; overflow:hidden; background:rgba(201,168,76,0.04);
-  }
-  .hero-badge::before {
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(90deg,transparent,rgba(201,168,76,0.12),transparent);
-    transform:translateX(-100%); animation:shimmer 4s ease-in-out infinite 2s;
-  }
-  @keyframes shimmer { to { transform:translateX(200%); } }
-  .hero-badge-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); display:inline-block; box-shadow:0 0 8px rgba(201,168,76,0.6); }
-
-  .hero-title {
-    font-family:'Cormorant Garamond',serif; font-size:clamp(52px,9.5vw,120px);
-    font-weight:300; line-height:0.88; color:var(--cream); margin-bottom:14px;
-    animation:heroFadeUp 1.2s cubic-bezier(0.4,0,0.2,1) 0.25s both;
-  }
-  .hero-title em { font-style:italic; 
-    background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--crimson-light));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .hero-subtitle-block {
-    font-family:'Cinzel',serif; font-size:clamp(18px,2.8vw,40px);
-    font-weight:600; letter-spacing:7px; color:var(--gold);
-    text-transform:uppercase; display:block; margin-bottom:32px;
-    animation:heroFadeUp 1.2s cubic-bezier(0.4,0,0.2,1) 0.42s both;
-  }
-  .hero-tagline {
-    font-size:14px; font-weight:300; color:var(--text-light);
-    letter-spacing:3px; margin-bottom:60px;
-    animation:heroFadeUp 1.2s cubic-bezier(0.4,0,0.2,1) 0.58s both;
-  }
-  .hero-actions {
-    display:flex; align-items:center; justify-content:center; gap:22px; flex-wrap:wrap;
-    animation:heroFadeUp 1.2s cubic-bezier(0.4,0,0.2,1) 0.74s both;
-  }
-  @keyframes heroFadeDown { from{opacity:0;transform:translateY(-32px);} to{opacity:1;transform:translateY(0);} }
-  @keyframes heroFadeUp   { from{opacity:0;transform:translateY(32px);}  to{opacity:1;transform:translateY(0);} }
-
-  /* BUTTONS */
-  .btn-primary {
-    background:linear-gradient(135deg,var(--gold),var(--gold-light),var(--gold));
-    background-size:200% 200%; background-position:0% 50%;
-    color:var(--navy-deep); font-family:'Cinzel',serif; font-size:11px;
-    font-weight:700; letter-spacing:3.5px; text-transform:uppercase;
-    padding:18px 48px; border:none; cursor:pointer; border-radius:2px;
-    transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
-    text-decoration:none; display:inline-block; position:relative; overflow:hidden;
-    box-shadow:0 4px 28px rgba(201,168,76,0.25);
-  }
-  .btn-primary:hover { background-position:100% 50%; transform:translateY(-5px) scale(1.02); box-shadow:0 22px 56px rgba(201,168,76,0.55); }
-  .btn-primary span { position:relative; z-index:1; }
-
-  .btn-outline {
-    background:transparent; color:var(--gold); font-family:'Cinzel',serif; font-size:11px;
-    font-weight:600; letter-spacing:3.5px; text-transform:uppercase; padding:17px 48px;
-    border:1px solid rgba(201,168,76,0.5); cursor:pointer; border-radius:2px;
-    transition:all 0.4s cubic-bezier(0.4,0,0.2,1); position:relative; overflow:hidden;
-    text-decoration:none; display:inline-block;
-  }
-  .btn-outline::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,var(--gold),var(--gold-light)); clip-path:inset(0 100% 0 0); transition:clip-path 0.4s cubic-bezier(0.4,0,0.2,1); }
-  .btn-outline:hover::before { clip-path:inset(0 0% 0 0); }
-  .btn-outline:hover { color:var(--navy-deep); transform:translateY(-5px); box-shadow:0 18px 44px rgba(201,168,76,0.35); }
-  .btn-outline span { position:relative; z-index:1; }
-
-  /* SCROLL INDICATOR - fixed: centered, no overlap with buttons */
-  .hero-scroll {
-    position:absolute; bottom:36px; left:50%; transform:translateX(-50%);
-    display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer; z-index:5;
-    animation:heroFadeUp 1s ease 1.4s both; width:auto; white-space:nowrap;
-  }
-  .hero-scroll-label { font-size:8.5px; letter-spacing:5px; color:var(--gold); opacity:0.7; text-transform:uppercase; }
-  .hero-scroll-line { width:1px; height:56px; background:rgba(201,168,76,0.12); position:relative; overflow:hidden; }
-  .hero-scroll-fill { position:absolute; top:-100%; width:100%; height:100%; background:linear-gradient(to bottom,transparent,var(--gold-light),var(--gold)); animation:scrollDrop 2.4s cubic-bezier(0.4,0,0.2,1) infinite; }
-  @keyframes scrollDrop { 0%{top:-100%;opacity:0;} 15%{opacity:1;} 80%{opacity:0.8;} 100%{top:100%;opacity:0;} }
-
-  .sec-scroll { display:flex; flex-direction:column; align-items:center; gap:9px; margin-top:72px; cursor:pointer; opacity:0.6; transition:opacity 0.3s; }
-  .sec-scroll:hover { opacity:1; }
-  .sec-scroll-label { font-size:8px; letter-spacing:4px; color:var(--gold); text-transform:uppercase; }
-  .sec-scroll-track { width:1px; height:48px; background:rgba(201,168,76,0.1); position:relative; overflow:hidden; }
-  .sec-scroll-fill { position:absolute; top:-100%; width:100%; height:100%; background:linear-gradient(to bottom,transparent,var(--gold)); animation:scrollDrop 2.8s ease-in-out infinite; }
-
-  /* BACK TO TOP - hidden on mobile */
-  .back-to-top {
-    position:fixed; bottom:36px; left:36px; z-index:990;
-    width:48px; height:48px; border-radius:50%;
-    background:rgba(5,7,13,0.92); border:1px solid rgba(201,168,76,0.35);
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer; transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
-    opacity:0; transform:translateY(24px) scale(0.9);
-    backdrop-filter:blur(12px); color:var(--gold);
-  }
-  .back-to-top.visible { opacity:1; transform:translateY(0) scale(1); }
-  .back-to-top:hover { background:linear-gradient(135deg,var(--gold),var(--gold-light)); border-color:var(--gold); color:var(--navy-deep); transform:translateY(-5px) scale(1.1); box-shadow:0 12px 36px rgba(201,168,76,0.5); }
-
-  /* SECTION COMMONS */
-  section { padding:120px 0; }
-  .container { max-width:1340px; margin:0 auto; padding:0 52px; }
-  .section-label { font-size:9.5px; font-weight:300; letter-spacing:8px; text-transform:uppercase; color:var(--gold); margin-bottom:16px; display:block; }
-  .section-title { font-family:'Cormorant Garamond',serif; font-size:clamp(38px,5.5vw,70px); font-weight:300; color:var(--cream); line-height:1.0; margin-bottom:24px; }
-  .section-title em { 
-    background:linear-gradient(135deg,var(--gold-light),var(--gold),var(--crimson-light));
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    font-style:italic;
-  }
-  .section-divider { width:0; height:1px; background:linear-gradient(90deg,var(--gold),var(--crimson-light),transparent); margin-bottom:36px; transition:width 1.2s cubic-bezier(0.4,0,0.2,1) 0.3s; }
-  .section-divider.visible { width:80px; }
-  .section-text { font-size:15.5px; font-weight:300; color:var(--text-light); line-height:2.0; max-width:560px; }
-
-  /* REVEAL ANIMATIONS */
-  .reveal { opacity:0; transform:translateY(48px); transition:opacity 0.9s cubic-bezier(0.4,0,0.2,1),transform 0.9s cubic-bezier(0.4,0,0.2,1); }
-  .reveal.visible { opacity:1; transform:translateY(0); }
-  .reveal-left { opacity:0; transform:translateX(-52px); transition:opacity 0.9s cubic-bezier(0.4,0,0.2,1),transform 0.9s cubic-bezier(0.4,0,0.2,1); }
-  .reveal-left.visible { opacity:1; transform:translateX(0); }
-  .reveal-right { opacity:0; transform:translateX(52px); transition:opacity 0.9s cubic-bezier(0.4,0,0.2,1),transform 0.9s cubic-bezier(0.4,0,0.2,1); }
-  .reveal-right.visible { opacity:1; transform:translateX(0); }
-  .reveal-scale { opacity:0; transform:scale(0.9) translateY(20px); transition:opacity 0.9s cubic-bezier(0.4,0,0.2,1),transform 0.9s cubic-bezier(0.4,0,0.2,1); }
-  .reveal-scale.visible { opacity:1; transform:scale(1) translateY(0); }
-
-  /* ====== ABOUT SECTION ====== */
-  .about-section { 
-    background:var(--navy); position:relative; overflow:hidden;
-  }
-  .about-section::before {
-    content:''; position:absolute; top:0; left:0; right:0; bottom:0;
-    background:radial-gradient(ellipse 80% 60% at 80% 50%, rgba(139,26,46,0.06) 0%, transparent 60%),
-               radial-gradient(ellipse 60% 80% at 10% 30%, rgba(13,110,122,0.05) 0%, transparent 50%);
-    pointer-events:none;
-  }
-  .about-section::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(201,168,76,0.25),rgba(139,26,46,0.2),transparent); }
-  .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; }
-  .about-card {
-    background:linear-gradient(145deg,rgba(17,26,46,0.9),rgba(5,7,13,0.95));
-    border:1px solid rgba(201,168,76,0.15); padding:56px; position:relative; overflow:hidden;
-    transition:border-color 0.5s,box-shadow 0.5s;
-  }
-  .about-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--gold),var(--crimson-light),var(--gold),transparent); transform:scaleX(0); transition:transform 0.8s cubic-bezier(0.4,0,0.2,1); transform-origin:left; }
-  .about-card:hover { border-color:rgba(201,168,76,0.35); box-shadow:0 30px 80px rgba(0,0,0,0.5),inset 0 0 80px rgba(201,168,76,0.02); }
-  .about-card:hover::before { transform:scaleX(1); }
-  .about-card::after { content:''; position:absolute; bottom:-80px; right:-80px; width:240px; height:240px; border-radius:50%; border:1px solid rgba(201,168,76,0.05); }
-  .about-ring { position:absolute; bottom:-40px; right:-40px; width:120px; height:120px; border-radius:50%; border:1px solid rgba(201,168,76,0.08); }
-  .about-ring2 { position:absolute; top:-60px; left:-60px; width:180px; height:180px; border-radius:50%; border:1px solid rgba(139,26,46,0.08); }
-  .about-quote { font-family:'Cormorant Garamond',serif; font-size:26px; color:var(--gold-light); font-style:italic; margin-bottom:20px; line-height:1.55; }
-  .about-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:40px; }
-  .stat-item {
-    text-align:center; padding:26px 14px; border:1px solid rgba(201,168,76,0.1);
-    background:rgba(201,168,76,0.02); transition:all 0.4s cubic-bezier(0.4,0,0.2,1); cursor:default; position:relative; overflow:hidden;
-  }
-  .stat-item::before { content:''; position:absolute; inset:0; background:linear-gradient(145deg,rgba(201,168,76,0.08),transparent); opacity:0; transition:opacity 0.4s; }
-  .stat-item::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:0; height:2px; background:linear-gradient(90deg,var(--gold),var(--crimson-light)); transition:width 0.4s; }
-  .stat-item:hover { border-color:rgba(201,168,76,0.45); transform:translateY(-5px); box-shadow:0 20px 44px rgba(0,0,0,0.4); }
-  .stat-item:hover::before { opacity:1; }
-  .stat-item:hover::after { width:80%; }
-  .stat-num { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; color:var(--gold); display:block; line-height:1; position:relative; z-index:1; }
-  .stat-label { font-size:9.5px; letter-spacing:3.5px; color:var(--text-mid); text-transform:uppercase; margin-top:8px; display:block; position:relative; z-index:1; }
-  .feature-list { list-style:none; margin-top:32px; }
-  .feature-list li {
-    display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid rgba(201,168,76,0.07);
-    font-size:14.5px; color:var(--text-light); cursor:default; transition:all 0.35s cubic-bezier(0.4,0,0.2,1); position:relative;
-  }
-  .feature-list li::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:1px; background:linear-gradient(90deg,var(--gold),var(--crimson-light),transparent); transform:scaleX(0); transition:transform 0.4s; transform-origin:left; }
-  .feature-list li:hover { color:var(--cream); padding-left:10px; }
-  .feature-list li:hover::after { transform:scaleX(1); }
-  .feature-dot { width:5px; height:5px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--crimson-light)); flex-shrink:0; box-shadow:0 0 6px rgba(201,168,76,0.4); }
-
-  /* ====== ROOMS AUTO SLIDER ====== */
-  .rooms-section { background:var(--navy-deep); overflow:hidden; }
-  .rooms-slider-outer { position:relative; overflow:hidden; }
-  .rooms-track { display:flex; gap:0; transition:transform 0.9s cubic-bezier(0.4,0,0.2,1); will-change:transform; }
-  .room-card {
-    min-width:calc(33.333%); position:relative; overflow:hidden;
-    height:560px; flex-shrink:0; cursor:pointer; background:var(--navy-mid);
-  }
-  .room-img-holder { position:absolute; inset:0; overflow:hidden; }
-  .room-img-holder img { width:100%; height:100%; object-fit:cover; transform:scale(1.08); filter:brightness(0.6) saturate(0.9); transition:transform 1s cubic-bezier(0.4,0,0.2,1),filter 0.8s; }
-  .room-card:hover .room-img-holder img { transform:scale(1.16); filter:brightness(0.42) saturate(1.1); }
-  .room-img-fallback { width:100%; height:100%; transform:scale(1.08); transition:transform 1s cubic-bezier(0.4,0,0.2,1); }
-  .room-card:hover .room-img-fallback { transform:scale(1.15); }
-  .room-gradient {
-    position:absolute; inset:0;
-    background:linear-gradient(to top,rgba(5,7,13,1) 0%,rgba(5,7,13,0.75) 45%,rgba(5,7,13,0.2) 75%,transparent 100%);
-    transition:all 0.6s ease;
-  }
-  .room-card:hover .room-gradient { background:linear-gradient(to top,rgba(5,7,13,1) 0%,rgba(5,7,13,0.9) 55%,rgba(5,7,13,0.45) 80%,rgba(5,7,13,0.1) 100%); }
-  .room-card::before { content:''; position:absolute; top:0; left:0; bottom:0; width:3px; z-index:5; background:linear-gradient(to bottom,var(--gold-light),var(--gold),var(--crimson-light),transparent); transform:scaleY(0); transform-origin:top; transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); }
-  .room-card:hover::before { transform:scaleY(1); }
-  .room-content { position:absolute; bottom:0; left:0; right:0; padding:40px; z-index:3; }
-  .room-price { font-family:'Cormorant Garamond',serif; font-size:13px; color:var(--gold); letter-spacing:2.5px; margin-bottom:8px; }
-  .room-name { font-family:'Cinzel',serif; font-size:21px; font-weight:600; color:var(--cream); margin-bottom:10px; }
-  .room-meta { display:flex; gap:20px; font-size:11.5px; color:var(--text-mid); letter-spacing:1.5px; margin-bottom:16px; }
-  .room-desc { font-size:13.5px; color:var(--text-light); line-height:1.7; opacity:0; transform:translateY(14px); max-height:0; overflow:hidden; transition:all 0.5s cubic-bezier(0.4,0,0.2,1); margin-bottom:0; }
-  .room-card:hover .room-desc { opacity:1; transform:translateY(0); max-height:80px; margin-bottom:20px; }
-  .room-btn {
-    background:transparent; color:var(--gold); font-family:'Cinzel',serif; font-size:9.5px;
-    font-weight:600; letter-spacing:3px; padding:10px 26px; border:1px solid rgba(201,168,76,0.45);
-    cursor:pointer; opacity:0; transform:translateY(12px);
-    transition:all 0.45s cubic-bezier(0.4,0,0.2,1) 0.08s; position:relative; overflow:hidden;
-  }
-  .room-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,var(--gold),var(--gold-light)); clip-path:inset(0 100% 0 0); transition:clip-path 0.35s cubic-bezier(0.4,0,0.2,1); }
-  .room-btn:hover::before { clip-path:inset(0 0% 0 0); }
-  .room-btn:hover { color:var(--navy-deep); border-color:var(--gold); }
-  .room-btn span { position:relative; z-index:1; }
-  .room-card:hover .room-btn { opacity:1; transform:translateY(0); }
-
-  .slider-progress-wrap { height:2px; background:rgba(201,168,76,0.08); width:100%; position:relative; overflow:hidden; }
-  .slider-progress-bar { height:100%; background:linear-gradient(90deg,var(--gold),var(--crimson-light),var(--gold-light)); transition:width 0.1s linear; }
-  .slider-footer { display:flex; align-items:center; justify-content:space-between; padding:28px 52px 0; }
-  .slider-counter { font-family:'Cormorant Garamond',serif; font-size:22px; color:var(--text-mid); letter-spacing:2px; }
-  .slider-counter span { color:var(--gold); }
-  .slider-dots { display:flex; gap:10px; align-items:center; }
-  .slider-dot { width:6px; height:6px; border-radius:50%; background:rgba(201,168,76,0.2); cursor:pointer; transition:all 0.4s cubic-bezier(0.4,0,0.2,1); border:none; }
-  .slider-dot.active { background:var(--gold); width:28px; border-radius:3px; }
-  .slider-pause-btn { width:44px; height:44px; border-radius:50%; border:1px solid rgba(201,168,76,0.3); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.35s cubic-bezier(0.4,0,0.2,1); color:var(--gold); }
-  .slider-pause-btn:hover { background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy-deep); border-color:var(--gold); transform:scale(1.12); }
-
-  /* ====== AMENITIES - equal box grid ====== */
-  .amenities-section { 
-    background:var(--navy); position:relative; overflow:hidden;
-  }
-  .amenities-section::before {
-    content:''; position:absolute; inset:0;
-    background:radial-gradient(ellipse 70% 50% at 30% 50%, rgba(201,168,76,0.03) 0%, transparent 60%);
-    pointer-events:none;
-  }
-  .amenities-grid { 
-    display:grid; 
-    grid-template-columns:repeat(4,1fr); 
-    gap:1px; 
-    background:rgba(201,168,76,0.06);
-  }
-  .amenity-card {
-    background:var(--navy-mid); padding:48px 24px; text-align:center;
-    position:relative; overflow:hidden; transition:all 0.45s cubic-bezier(0.4,0,0.2,1); cursor:default;
-    min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  }
-  .amenity-card::before { 
-    content:''; position:absolute; inset:0; 
-    background:linear-gradient(145deg,rgba(201,168,76,0.06),rgba(139,26,46,0.04)); 
-    opacity:0; transition:opacity 0.45s; 
-  }
-  .amenity-card::after { 
-    content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); 
-    width:0; height:2px; 
-    background:linear-gradient(90deg,transparent,var(--gold),var(--crimson-light),transparent); 
-    transition:width 0.5s cubic-bezier(0.4,0,0.2,1); 
-  }
-  .amenity-card:hover { 
-    background:var(--navy-light); transform:translateY(-8px); 
-    box-shadow:0 28px 64px rgba(0,0,0,0.6),0 0 0 1px rgba(201,168,76,0.2); 
-    z-index:1;
-  }
-  .amenity-card:hover::before { opacity:1; }
-  .amenity-card:hover::after { width:70%; }
-  .amenity-icon { 
-    margin-bottom:20px; display:flex; align-items:center; justify-content:center; 
-    transition:transform 0.45s cubic-bezier(0.4,0,0.2,1);
-    width:64px; height:64px; border:1px solid rgba(201,168,76,0.15); border-radius:50%;
-    background:rgba(201,168,76,0.04);
-  }
-  .amenity-card:hover .amenity-icon { 
-    transform:scale(1.15) translateY(-4px); 
-    border-color:rgba(201,168,76,0.4);
-    background:rgba(201,168,76,0.08);
-    box-shadow:0 0 24px rgba(201,168,76,0.15);
-  }
-  .amenity-name { font-family:'Cinzel',serif; font-size:10.5px; font-weight:600; letter-spacing:2.5px; color:var(--gold); text-transform:uppercase; margin-bottom:10px; }
-  .amenity-desc { font-size:12.5px; color:var(--text-mid); line-height:1.75; }
-
-  /* ====== BANQUET ====== */
-  .banquet-section { 
-    background:var(--navy-deep); position:relative; overflow:hidden;
-  }
-  .banquet-section::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(201,168,76,0.2),rgba(139,26,46,0.15),transparent); }
-  .banquet-bg-orb { position:absolute; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle,rgba(139,26,46,0.06) 0%,transparent 60%); right:-200px; top:50%; transform:translateY(-50%); pointer-events:none; filter:blur(60px); }
-  .banquet-grid { display:grid; grid-template-columns:1fr 1fr; gap:96px; align-items:center; }
-  .banquet-features { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:40px; }
-  .banquet-feature {
-    background:rgba(201,168,76,0.02); border:1px solid rgba(201,168,76,0.1);
-    padding:26px; position:relative; overflow:hidden; transition:all 0.4s cubic-bezier(0.4,0,0.2,1); cursor:default;
-  }
-  .banquet-feature::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(to bottom,var(--gold),var(--crimson-light)); transform:scaleY(0); transition:transform 0.4s; transform-origin:bottom; }
-  .banquet-feature:hover::before { transform:scaleY(1); }
-  .banquet-feature:hover { background:rgba(201,168,76,0.07); border-color:rgba(201,168,76,0.3); transform:translateY(-3px) translateX(4px); box-shadow:0 12px 32px rgba(0,0,0,0.3); }
-  .banquet-feature-title { font-family:'Cinzel',serif; font-size:10px; color:var(--gold); letter-spacing:2.5px; }
-  .banquet-visual { position:relative; height:540px; }
-  .bv-main { position:absolute; top:0; left:0; right:64px; bottom:64px; background:linear-gradient(145deg,var(--navy-light),var(--navy-deep)); border:1px solid rgba(201,168,76,0.12); display:flex; align-items:center; justify-content:center; overflow:hidden; transition:border-color 0.4s; }
-  .bv-main:hover { border-color:rgba(201,168,76,0.3); }
-  .bv-main-inner { position:absolute; inset:0; background:radial-gradient(circle at 50% 50%, rgba(139,26,46,0.08) 0%, transparent 70%); animation:pulseGlow 4s ease-in-out infinite; }
-  .bv-accent { position:absolute; bottom:0; right:0; width:210px; height:210px; background:linear-gradient(135deg,var(--gold),var(--gold-light)); display:flex; align-items:center; justify-content:center; opacity:0.9; }
-  .bv-badge {
-    position:absolute; top:36px; right:76px; z-index:2;
-    background:linear-gradient(135deg,var(--gold),var(--gold-light));
-    color:var(--navy-deep); width:100px; height:100px; border-radius:50%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    font-family:'Cinzel',serif; font-size:9px; font-weight:700; letter-spacing:1px;
-    text-align:center; line-height:1.5; text-transform:uppercase;
-    box-shadow:0 8px 40px rgba(201,168,76,0.5);
-    animation:badgeSpin 8s linear infinite;
-  }
-  .bv-badge strong { font-size:24px; letter-spacing:0; display:block; }
-  @keyframes badgeSpin { 0%,100%{transform:rotate(-3deg) scale(1);} 50%{transform:rotate(3deg) scale(1.05);} }
-  @keyframes pulseGlow { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
-
-  /* ====== RESTAURANT ====== */
-  .restaurant-section { background:var(--navy); }
-  .restaurant-grid { display:grid; grid-template-columns:1fr 1fr; gap:96px; align-items:center; }
-  .restaurant-visual {
-    background:linear-gradient(145deg,var(--navy-mid),var(--navy-deep));
-    border:1px solid rgba(201,168,76,0.12); padding:56px;
-    min-height:420px; display:flex; align-items:center; justify-content:center;
-    position:relative; overflow:hidden; transition:border-color 0.4s;
-  }
-  .restaurant-visual::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 50%,rgba(139,26,46,0.06),transparent 70%); animation:pulseGlow 4s ease-in-out infinite; }
-  .restaurant-visual:hover { border-color:rgba(201,168,76,0.3); }
-  .menu-tabs { display:flex; gap:2px; margin-bottom:36px; }
-  .menu-tab { padding:12px 22px; font-family:'Cinzel',serif; font-size:9.5px; letter-spacing:2.5px; cursor:pointer; border:1px solid rgba(201,168,76,0.15); background:transparent; color:var(--text-mid); transition:all 0.35s cubic-bezier(0.4,0,0.2,1); }
-  .menu-tab.active { background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy-deep); border-color:var(--gold); }
-  .menu-tab:hover:not(.active) { border-color:var(--gold); color:var(--gold); }
-  .menu-items { display:flex; flex-direction:column; }
-  .menu-item {
-    display:flex; justify-content:space-between; align-items:flex-start;
-    padding:20px 0; border-bottom:1px solid rgba(201,168,76,0.07);
-    transition:all 0.35s; cursor:default; position:relative;
-  }
-  .menu-item::after { content:''; position:absolute; left:-8px; top:50%; transform:translateY(-50%); width:3px; height:0; background:linear-gradient(to bottom,var(--gold),var(--crimson-light)); transition:height 0.35s cubic-bezier(0.4,0,0.2,1); }
-  .menu-item:hover { padding-left:12px; }
-  .menu-item:hover::after { height:60%; }
-  .menu-item-name { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--cream); }
-  .menu-item-desc { font-size:12.5px; color:var(--text-mid); margin-top:4px; }
-  .menu-item-price { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--gold); white-space:nowrap; }
-
-  /* ====== GALLERY ====== */
-  .gallery-section { background:var(--navy); padding:120px 0; }
-  .gallery-grid { display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,240px); gap:4px; }
-  .gallery-item { overflow:hidden; cursor:pointer; position:relative; background:var(--navy-mid); display:flex; align-items:center; justify-content:center; }
-  .gallery-item:nth-child(1) { grid-column:span 2; grid-row:span 2; }
-  .gallery-bg { position:absolute; inset:0; transition:transform 0.8s cubic-bezier(0.4,0,0.2,1); }
-  .gallery-item:hover .gallery-bg { transform:scale(1.08); }
-  .gallery-overlay { position:absolute; inset:0; background:rgba(5,7,13,0.55); opacity:0; transition:opacity 0.5s; display:flex; align-items:center; justify-content:center; }
-  .gallery-item:hover .gallery-overlay { opacity:1; }
-  .gallery-label { font-family:'Cinzel',serif; font-size:11px; color:var(--gold); letter-spacing:3px; margin-top:10px; text-transform:uppercase; transform:translateY(10px); transition:transform 0.4s 0.1s; }
-  .gallery-item:hover .gallery-label { transform:translateY(0); }
-
-  /* ====== ATTRACTIONS - infinite loop ====== */
-  .attractions-section { background:var(--navy-deep); overflow:hidden; }
-  .attractions-header { text-align:center; margin-bottom:68px; }
-  .attractions-infinite-outer { position:relative; overflow:hidden; }
-  .attractions-infinite-outer::before,
-  .attractions-infinite-outer::after {
-    content:''; position:absolute; top:0; bottom:0; width:180px; z-index:5; pointer-events:none;
-  }
-  .attractions-infinite-outer::before { left:0; background:linear-gradient(to right,var(--navy-deep),transparent); }
-  .attractions-infinite-outer::after { right:0; background:linear-gradient(to left,var(--navy-deep),transparent); }
-  .attractions-track-wrap { 
-    display:flex; gap:20px; 
-    animation:attractionsLoop 28s linear infinite;
-    width:max-content;
-  }
-  .attractions-track-wrap:hover { animation-play-state:paused; }
-  @keyframes attractionsLoop { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
-
-  .attraction-card {
-    border:1px solid rgba(201,168,76,0.1); padding:40px; background:var(--navy-mid);
-    position:relative; overflow:hidden; transition:all 0.45s cubic-bezier(0.4,0,0.2,1); cursor:default;
-    width:320px; flex-shrink:0;
-  }
-  .attraction-card::before { content:''; position:absolute; inset:0; background:linear-gradient(145deg,rgba(201,168,76,0.04),rgba(139,26,46,0.03)); opacity:0; transition:opacity 0.45s; }
-  .attraction-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--gold),var(--gold-light),var(--crimson-light),transparent); transform:scaleX(0); transform-origin:left; transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); }
-  .attraction-card:hover { transform:translateY(-8px); border-color:rgba(201,168,76,0.3); box-shadow:0 30px 68px rgba(0,0,0,0.5); }
-  .attraction-card:hover::before { opacity:1; }
-  .attraction-card:hover::after { transform:scaleX(1); }
-  .attraction-icon { 
-    margin-bottom:20px; transition:transform 0.45s cubic-bezier(0.4,0,0.2,1);
-    width:56px; height:56px; border:1px solid rgba(201,168,76,0.2); border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    background:rgba(201,168,76,0.04);
-  }
-  .attraction-card:hover .attraction-icon { 
-    transform:scale(1.2) translateY(-4px); 
-    border-color:var(--gold);
-    box-shadow:0 0 24px rgba(201,168,76,0.2);
-  }
-  .attraction-name { font-family:'Cinzel',serif; font-size:12.5px; font-weight:600; color:var(--gold); letter-spacing:2.5px; margin-bottom:10px; text-transform:uppercase; }
-  .attraction-dist { font-size:11px; color:var(--text-mid); letter-spacing:2px; margin-bottom:14px; }
-  .attraction-desc { font-size:13.5px; color:var(--text-light); line-height:1.8; }
-
-  /* ====== TESTIMONIALS - AUTO SLIDER ====== */
-  .testimonials-section { background:var(--navy); position:relative; overflow:hidden; }
-  .testimonials-section::before {
-    content:''; position:absolute; inset:0;
-    background:radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,168,76,0.03) 0%, transparent 60%);
-    pointer-events:none;
-  }
-  .testimonials-slider-outer { position:relative; overflow:hidden; }
-  .testimonials-slider-outer::before,
-  .testimonials-slider-outer::after {
-    content:''; position:absolute; top:0; bottom:0; width:120px; z-index:5; pointer-events:none;
-  }
-  .testimonials-slider-outer::before { left:0; background:linear-gradient(to right,var(--navy),transparent); }
-  .testimonials-slider-outer::after { right:0; background:linear-gradient(to left,var(--navy),transparent); }
-  .testimonials-track { display:flex; gap:20px; transition:transform 0.9s cubic-bezier(0.4,0,0.2,1); will-change:transform; }
-  .testimonial-card { 
-    min-width:420px; flex-shrink:0; background:var(--navy-mid); 
-    border:1px solid rgba(201,168,76,0.1); padding:48px; position:relative; overflow:hidden; 
-    transition:all 0.45s cubic-bezier(0.4,0,0.2,1);
-  }
-  .testimonial-card::before { content:''; position:absolute; top:0; right:0; width:80px; height:80px; border-left:1px solid rgba(201,168,76,0.12); border-bottom:1px solid rgba(201,168,76,0.12); transition:all 0.4s; }
-  .testimonial-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--gold),var(--crimson-light),transparent); transform:scaleX(0); transition:transform 0.5s; }
-  .testimonial-card:hover { border-color:rgba(201,168,76,0.28); box-shadow:0 20px 56px rgba(0,0,0,0.4); transform:translateY(-4px); }
-  .testimonial-card:hover::before { width:120px; height:120px; border-color:rgba(201,168,76,0.3); }
-  .testimonial-card:hover::after { transform:scaleX(1); }
-  .testimonial-quote { font-family:'Cormorant Garamond',serif; font-size:76px; color:var(--gold); opacity:0.15; line-height:0.4; margin-bottom:24px; display:block; }
-  .testimonial-text { font-family:'Cormorant Garamond',serif; font-size:18.5px; font-style:italic; color:var(--cream); line-height:1.75; margin-bottom:28px; }
-  .testimonial-author { font-family:'Cinzel',serif; font-size:10.5px; color:var(--gold); letter-spacing:2.5px; }
-  .testimonial-location { font-size:12px; color:var(--text-mid); margin-top:5px; }
-  .stars { letter-spacing:3px; margin-bottom:20px; font-size:13px; }
-  .star-filled { color:var(--gold); }
-  .testimonials-footer { display:flex; align-items:center; justify-content:center; gap:16px; margin-top:40px; }
-  .testimonials-dot { width:6px; height:6px; border-radius:50%; background:rgba(201,168,76,0.2); cursor:pointer; transition:all 0.4s; border:none; }
-  .testimonials-dot.active { background:var(--gold); width:28px; border-radius:3px; }
-  .testimonials-nav { width:44px; height:44px; border-radius:50%; border:1px solid rgba(201,168,76,0.3); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--gold); transition:all 0.35s; }
-  .testimonials-nav:hover { background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy-deep); border-color:var(--gold); transform:scale(1.1); }
-
-  /* ====== BOOKING ====== */
-  .booking-section { background:var(--navy-deep); position:relative; overflow:hidden; }
-  .booking-section::before {
-    content:''; position:absolute; inset:0;
-    background:radial-gradient(ellipse 80% 60% at 20% 50%, rgba(13,110,122,0.04) 0%, transparent 50%),
-               radial-gradient(ellipse 60% 60% at 80% 60%, rgba(139,26,46,0.05) 0%, transparent 50%);
-    pointer-events:none;
-  }
-  .booking-grid { display:grid; grid-template-columns:1fr 1fr; gap:96px; align-items:start; }
-  .booking-form { 
-    background:linear-gradient(145deg,rgba(17,26,46,0.95),rgba(5,7,13,0.98));
-    border:1px solid rgba(201,168,76,0.15); padding:56px; position:relative; overflow:hidden; 
-    transition:border-color 0.4s,box-shadow 0.4s;
-  }
-  .booking-form:hover { border-color:rgba(201,168,76,0.28); box-shadow:0 28px 72px rgba(0,0,0,0.5); }
-  .booking-form::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--gold),var(--crimson-light),var(--gold),transparent); }
-  .booking-form::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(139,26,46,0.2),transparent); }
-  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .form-group { margin-bottom:22px; }
-  .form-label { display:block; font-family:'Cinzel',serif; font-size:9px; letter-spacing:3.5px; color:var(--gold); text-transform:uppercase; margin-bottom:10px; }
-  .form-input,.form-select { width:100%; background:rgba(255,255,255,0.02); border:1px solid rgba(201,168,76,0.15); color:var(--cream); padding:14px 18px; font-family:'Jost',sans-serif; font-size:14px; outline:none; transition:all 0.35s; border-radius:2px; appearance:none; }
-  .form-input:focus,.form-select:focus { border-color:var(--gold); background:rgba(201,168,76,0.04); box-shadow:0 0 0 3px rgba(201,168,76,0.07); }
-  .form-input::placeholder { color:rgba(189,176,154,0.3); }
-  .form-select option { background:var(--navy-deep); color:var(--cream); }
-  .form-submit { width:100%; background:linear-gradient(135deg,var(--gold),var(--gold-light),var(--gold)); background-size:200% 200%; color:var(--navy-deep); font-family:'Cinzel',serif; font-size:12px; font-weight:700; letter-spacing:4px; padding:20px; border:none; cursor:pointer; text-transform:uppercase; transition:all 0.4s cubic-bezier(0.4,0,0.2,1); border-radius:2px; margin-top:8px; }
-  .form-submit:hover { background-position:100% 50%; transform:translateY(-4px); box-shadow:0 20px 52px rgba(201,168,76,0.5); }
-  .contact-info { padding-top:28px; }
-  .contact-item { display:flex; align-items:flex-start; gap:20px; margin-bottom:36px; cursor:default; }
-  .contact-icon { width:52px; height:52px; border:1px solid rgba(201,168,76,0.25); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--gold); transition:all 0.4s cubic-bezier(0.4,0,0.2,1); }
-  .contact-item:hover .contact-icon { background:rgba(201,168,76,0.1); border-color:var(--gold); transform:scale(1.1) rotate(5deg); box-shadow:0 8px 24px rgba(201,168,76,0.25); }
-  .contact-title { font-family:'Cinzel',serif; font-size:10.5px; color:var(--gold); letter-spacing:2.5px; }
-  .contact-detail { font-size:14px; color:var(--text-light); margin-top:5px; line-height:1.75; }
-
-  /* ====== FOOTER - premium ====== */
-  .footer { 
-    background:#020308; padding:96px 0 0; position:relative; overflow:hidden;
-  }
-  .footer::before {
-    content:''; position:absolute; top:0; left:0; right:0; bottom:0;
-    background:radial-gradient(ellipse 80% 40% at 50% 0%, rgba(201,168,76,0.04) 0%, transparent 50%);
-    pointer-events:none;
-  }
-  .footer-top-border { height:1px; background:linear-gradient(90deg,transparent,var(--gold),var(--crimson-light),var(--gold),transparent); margin-bottom:0; }
-  .footer-inner { padding-top:80px; }
-  .footer-grid { display:grid; grid-template-columns:2.4fr 1fr 1fr 1.6fr; gap:56px; margin-bottom:72px; }
-  .footer-brand-title { 
-    font-family:'Cinzel',serif; font-size:22px; 
-    background:linear-gradient(135deg,var(--gold),var(--gold-light));
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    letter-spacing:3px; margin-bottom:6px; 
-  }
-  .footer-brand-sub { font-size:9px; letter-spacing:6px; color:var(--text-mid); text-transform:uppercase; margin-bottom:22px; }
-  .footer-brand-desc { font-size:13.5px; color:var(--text-mid); line-height:1.9; max-width:290px; }
-  .footer-col-title { 
-    font-family:'Cinzel',serif; font-size:10.5px; color:var(--gold); 
-    letter-spacing:3.5px; text-transform:uppercase; margin-bottom:28px;
-    padding-bottom:14px; border-bottom:1px solid rgba(201,168,76,0.15);
-    position:relative;
-  }
-  .footer-col-title::after { content:''; position:absolute; bottom:-1px; left:0; width:28px; height:1px; background:var(--crimson-light); }
-  .footer-links { list-style:none; }
-  .footer-links li { margin-bottom:13px; }
-  .footer-links a { font-size:13.5px; color:var(--text-mid); text-decoration:none; transition:all 0.35s; display:inline-flex; align-items:center; gap:8px; }
-  .footer-links a::before { content:''; width:4px; height:4px; border-radius:50%; background:var(--gold); opacity:0; transform:translateX(-8px); transition:all 0.35s; flex-shrink:0; }
-  .footer-links a:hover { color:var(--gold); padding-left:4px; }
-  .footer-links a:hover::before { opacity:1; transform:translateX(0); }
-  .footer-social { display:flex; gap:10px; margin-top:30px; }
-  .social-btn { width:42px; height:42px; border:1px solid rgba(201,168,76,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text-mid); cursor:pointer; text-decoration:none; transition:all 0.4s cubic-bezier(0.4,0,0.2,1); }
-  .social-btn:hover { border-color:var(--gold); color:var(--gold); transform:translateY(-5px) rotate(8deg); box-shadow:0 10px 28px rgba(201,168,76,0.3); background:rgba(201,168,76,0.06); }
-  .footer-newsletter { margin-top:28px; }
-  .footer-newsletter-title { font-family:'Cinzel',serif; font-size:10px; color:var(--gold); letter-spacing:3px; margin-bottom:14px; }
-  .footer-newsletter-form { display:flex; gap:0; }
-  .footer-newsletter-input { flex:1; background:rgba(255,255,255,0.03); border:1px solid rgba(201,168,76,0.15); border-right:none; color:var(--cream); padding:12px 16px; font-family:'Jost',sans-serif; font-size:13px; outline:none; transition:border-color 0.3s; }
-  .footer-newsletter-input:focus { border-color:rgba(201,168,76,0.4); }
-  .footer-newsletter-input::placeholder { color:rgba(122,110,94,0.6); }
-  .footer-newsletter-btn { background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy-deep); border:none; padding:12px 20px; cursor:pointer; font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; font-weight:700; transition:all 0.35s; flex-shrink:0; }
-  .footer-newsletter-btn:hover { box-shadow:0 6px 24px rgba(201,168,76,0.4); }
-  .footer-awards { margin-top:32px; display:flex; gap:16px; flex-wrap:wrap; }
-  .footer-award-badge { display:flex; align-items:center; gap:8px; padding:10px 16px; border:1px solid rgba(201,168,76,0.12); background:rgba(201,168,76,0.02); }
-  .footer-award-badge-icon { color:var(--gold); font-size:18px; }
-  .footer-award-badge-text { font-family:'Cinzel',serif; font-size:8px; color:var(--text-mid); letter-spacing:2px; line-height:1.5; }
-  .footer-stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:rgba(201,168,76,0.08); margin-bottom:60px; }
-  .footer-stat { background:rgba(9,17,30,0.8); padding:32px 20px; text-align:center; position:relative; overflow:hidden; }
-  .footer-stat::before { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); transform:scaleX(0); transition:transform 0.5s; }
-  .footer-stat:hover::before { transform:scaleX(1); }
-  .footer-stat-num { font-family:'Cormorant Garamond',serif; font-size:44px; font-weight:300; color:var(--gold); display:block; line-height:1; }
-  .footer-stat-label { font-size:9px; letter-spacing:3px; color:var(--text-mid); text-transform:uppercase; margin-top:8px; display:block; }
-  .footer-divider { height:1px; background:linear-gradient(90deg,transparent,rgba(201,168,76,0.15),rgba(139,26,46,0.1),transparent); margin-bottom:0; }
-  .footer-bottom { padding:28px 0; display:flex; justify-content:space-between; align-items:center; }
-  .footer-bottom-text { font-size:12.5px; color:var(--text-mid); }
-  .footer-bottom-text span { color:var(--gold); }
-  .footer-bottom-links { display:flex; gap:28px; }
-  .footer-bottom-links a { font-size:12px; color:var(--text-mid); text-decoration:none; transition:color 0.3s; letter-spacing:1px; }
-  .footer-bottom-links a:hover { color:var(--gold); }
-
-  /* WHATSAPP - muted, aligned with page */
-  .whatsapp-float { 
-    position:fixed; bottom:40px; right:40px; z-index:991; 
-    background:rgba(9,17,30,0.92);
-    color:rgba(37,211,102,0.75); 
-    width:52px; height:52px; border-radius:50%; border:1px solid rgba(37,211,102,0.25);
-    display:flex; align-items:center; justify-content:center; cursor:pointer; 
-    box-shadow:0 4px 20px rgba(0,0,0,0.5);
-    text-decoration:none; 
-    transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
-    backdrop-filter:blur(12px);
-  }
-  .whatsapp-float:hover { 
-    background:rgba(37,211,102,0.15); 
-    color:rgba(37,211,102,0.95);
-    border-color:rgba(37,211,102,0.5);
-    transform:translateY(-4px); 
-    box-shadow:0 12px 32px rgba(37,211,102,0.2); 
-  }
-
-  /* TOAST */
-  .toast { position:fixed; bottom:40px; right:116px; z-index:9999; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy-deep); font-family:'Cinzel',serif; font-size:10.5px; font-weight:700; letter-spacing:3px; padding:18px 32px; transform:translateY(120px); opacity:0; transition:all 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow:0 12px 40px rgba(201,168,76,0.4); }
-  .toast.show { transform:translateY(0); opacity:1; }
-
-  /* RESPONSIVE */
-  @media (max-width:1200px) {
-    .amenities-grid { grid-template-columns:repeat(4,1fr); }
-  }
-  @media (max-width:1024px) {
-    .about-grid,.banquet-grid,.restaurant-grid,.booking-grid { grid-template-columns:1fr; gap:56px; }
-    .footer-grid { grid-template-columns:1fr 1fr; gap:44px; }
-    .gallery-grid { grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(3,200px); }
-    .gallery-item:nth-child(1) { grid-column:span 2; }
-    .room-card { min-width:50%; }
-    .amenities-grid { grid-template-columns:repeat(4,1fr); }
-    .footer-stats-row { grid-template-columns:repeat(2,1fr); }
-  }
-  @media (max-width:768px) {
-    .navbar { padding:0 20px; }
-    .nav-links { display:none; }
-    .hamburger { display:flex; }
-    .mobile-menu { display:flex; }
-    .container { padding:0 20px; }
-    section { padding:72px 0; }
-    .room-card { min-width:88%; }
-    .amenities-grid { grid-template-columns:repeat(2,1fr); }
-    .footer-grid { grid-template-columns:1fr; }
-    .gallery-grid { grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,150px); }
-    .gallery-item:nth-child(1) { grid-column:span 2; grid-row:span 1; }
-    .form-row { grid-template-columns:1fr; }
-    .banquet-features { grid-template-columns:1fr; }
-    .about-stat-grid { grid-template-columns:1fr 1fr; }
-    .hero-actions { flex-direction:column; align-items:center; }
-    .footer-bottom { flex-direction:column; gap:14px; text-align:center; }
-    .testimonial-card { min-width:88%; }
-    .back-to-top { display:none !important; }
-    .whatsapp-float { bottom:24px; right:20px; width:48px; height:48px; }
-    .slider-footer { padding:18px 20px 0; }
-    .footer-stats-row { grid-template-columns:repeat(2,1fr); }
-    .hero-scroll { bottom:24px; }
-    .hero-scroll-line { height:40px; }
-  }
-  @media (max-width:480px) {
-    .amenities-grid { grid-template-columns:repeat(2,1fr); }
-    .gallery-grid { grid-template-columns:1fr; grid-template-rows:auto; }
-    .gallery-item { height:200px; }
-    .gallery-item:nth-child(1) { grid-column:span 1; }
-    .menu-tabs { flex-wrap:wrap; }
-    .room-card { min-width:94%; }
-    .testimonial-card { min-width:90%; }
-    .footer-newsletter-form { flex-direction:column; gap:8px; }
-    .footer-newsletter-input { border-right:1px solid rgba(201,168,76,0.15); }
-    .footer-newsletter-btn { width:100%; }
-    .footer-bottom-links { flex-direction:column; gap:12px; align-items:center; }
-    .footer-stats-row { grid-template-columns:1fr 1fr; }
-  }
-`;
-
-const Icon = {
-  ChevronUp: () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>),
-  ChevronLeft: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>),
-  ChevronRight: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>),
-  MapPin: () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>),
-  Phone: () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.29 6.29l.95-.96a2 2 0 0 1 2.1-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.02z"/></svg>),
-  Mail: () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>),
-  Clock: () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>),
-  Pause: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>),
-  Play: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>),
-  Award: () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>),
-  Wave: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round"><path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity="0.4"/></svg>),
-  Dining: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>),
-  Star: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>),
-  Clock2: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>),
-  Car: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-3h12l2 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><line x1="9" y1="17" x2="15" y2="17"/></svg>),
-  Wifi: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="#C9A84C"/></svg>),
-  Spa: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22C6 22 2 17.5 2 12c0-1.7.4-3.3 1.1-4.8C5.4 11 8.4 13 12 13s6.6-2 8.9-5.8c.7 1.5 1.1 3.1 1.1 4.8 0 5.5-4 10-10 10z"/><path d="M12 13C12 8 15.3 3.7 20 2c0 5.5-3.6 10-8 11z"/><path d="M12 13C12 8 8.7 3.7 4 2c0 5.5 3.6 10 8 11z"/></svg>),
-  Temple: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7h20L12 2z"/><path d="M2 7v2h20V7"/><rect x="4" y="9" width="4" height="13"/><rect x="10" y="9" width="4" height="13"/><rect x="16" y="9" width="4" height="13"/><line x1="2" y1="22" x2="22" y2="22"/></svg>),
-  Tree: () => (<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 14l-5-9-5 9h4v8h2v-8z"/></svg>),
-  WhatsApp: () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>),
-  FB: () => (<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>),
-  IG: () => (<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>),
-  YT: () => (<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>),
+/* ── Working Unsplash Images ── */
+const IMG = {
+  premiumSuite:   "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=900&q=80",
+  luxurySuite:    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=900&q=80",
+  natureCottage:  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=900&q=80",
+  riversideRoom:  "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=900&q=80",
+  heritageVilla:  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80",
+  forestChalet:   "https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=900&q=80",
+  royalChamber:   "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=900&q=80",
+  gardenSuite:    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=900&q=80",
+  banquet1:       "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=80",
+  banquet2:       "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=900&q=80",
+  banquet3:       "https://images.unsplash.com/photo-1547393947-1849a9bc4b6f?w=900&q=80",
+  banquet4:       "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=900&q=80",
+  restInterior:   "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80",
+  foodBiryani:    "https://images.unsplash.com/photo-1563379091339-03246963d29e?w=600&q=80",
+  foodThali:      "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80",
+  foodDessert:    "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&q=80",
+  galleryResort:  "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=1200&q=80",
+  gallerySuite:   "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80",
+  gallerySunrise: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+  galleryBanquet: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80",
+  galleryDining:  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
 };
 
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700&family=Jost:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;--gold-light:#E8C97A;--gold-pale:#F5E6C0;
+  --g1:#04100D;--g2:#071A14;--g3:#0C2318;--g4:#112B1E;--g5:#173524;
+  --g6:#1D402A;--g7:#234C31;--g8:#2A5838;
+  --cream:#FAF5EC;--text-light:#BDB09A;--text-mid:#7A6E5E;
+  --accent:#3d9e6a;--accent-light:#5db882;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Jost',sans-serif;background:var(--g1);color:var(--cream);overflow-x:hidden}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--g1)}
+::-webkit-scrollbar-thumb{background:linear-gradient(to bottom,var(--gold),var(--accent));border-radius:2px}
+
+/* NAVBAR */
+.nb{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 48px;height:86px;display:flex;align-items:center;justify-content:space-between;transition:all .6s cubic-bezier(.4,0,.2,1)}
+.nb.sc{background:rgba(4,16,13,.97);backdrop-filter:blur(32px);height:68px;border-bottom:1px solid rgba(201,168,76,.15);box-shadow:0 4px 80px rgba(0,0,0,.7)}
+.nb-logo{cursor:pointer}
+.nb-logo-t{font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:var(--gold);letter-spacing:3px}
+.nb-logo-s{font-size:8px;font-weight:300;color:var(--text-mid);letter-spacing:6px;text-transform:uppercase;margin-top:3px}
+.nb-links{display:flex;align-items:center;gap:24px;list-style:none}
+.nb-links a{font-family:'Cinzel',serif;font-size:9.5px;color:var(--text-light);text-decoration:none;letter-spacing:2px;text-transform:uppercase;transition:color .3s;position:relative;padding-bottom:5px}
+.nb-links a::after{content:'';position:absolute;bottom:0;left:0;width:0;height:1px;background:linear-gradient(90deg,var(--gold),var(--accent-light));transition:width .4s}
+.nb-links a:hover{color:var(--gold)}
+.nb-links a:hover::after{width:100%}
+.nb-cta{background:linear-gradient(135deg,var(--gold),var(--gold-light))!important;color:var(--g1)!important;padding:10px 22px!important;font-weight:700!important;border-radius:2px;letter-spacing:2px!important;box-shadow:0 0 28px rgba(201,168,76,.25);transition:all .35s!important}
+.nb-cta::after{display:none!important}
+.nb-cta:hover{transform:translateY(-2px)!important;box-shadow:0 8px 36px rgba(201,168,76,.55)!important}
+.hbg{display:none;flex-direction:column;gap:5px;cursor:pointer;z-index:1100;background:none;border:none;padding:4px}
+.hbg span{display:block;width:26px;height:1.5px;background:var(--gold);transition:all .35s;transform-origin:center}
+.hbg.op span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+.hbg.op span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hbg.op span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+.mm{display:none;position:fixed;inset:0;z-index:1050;background:rgba(4,16,13,.99);flex-direction:column;align-items:center;justify-content:center;gap:44px;opacity:0;pointer-events:none;transition:opacity .45s}
+.mm.op{opacity:1;pointer-events:all}
+.mm a{font-family:'Cinzel',serif;font-size:22px;color:var(--cream);text-decoration:none;letter-spacing:5px;transition:color .3s}
+.mm a:hover{color:var(--gold)}
+
+/* HERO */
+.hero{height:100vh;min-height:700px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.h-bg{position:absolute;inset:0;background:radial-gradient(ellipse 140% 100% at 55% 20%,#0c2a18 0%,#071a10 30%,#040f0a 65%,#04100d 100%)}
+.h-pat{position:absolute;inset:0;opacity:.025;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(201,168,76,.5) 39px,rgba(201,168,76,.5) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(201,168,76,.5) 39px,rgba(201,168,76,.5) 40px)}
+.h-topline{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),var(--accent-light),var(--gold),transparent);animation:tlineShim 4s ease-in-out infinite}
+@keyframes tlineShim{0%,100%{opacity:.6}50%{opacity:1}}
+.h-rings{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
+.h-ring{position:absolute;border-radius:50%}
+.h-ring:nth-child(1){width:480px;height:480px;border:1px solid rgba(201,168,76,.08);animation:rp 7s ease-in-out infinite}
+.h-ring:nth-child(2){width:780px;height:780px;border:1px solid rgba(61,158,106,.07);animation:rp 7s ease-in-out infinite 1.75s}
+.h-ring:nth-child(3){width:1100px;height:1100px;border:1px solid rgba(201,168,76,.05);animation:rp 7s ease-in-out infinite 3.5s}
+.h-ring:nth-child(4){width:1420px;height:1420px;border:1px solid rgba(61,158,106,.04);animation:rp 7s ease-in-out infinite 5.25s}
+@keyframes rp{0%,100%{transform:scale(1);opacity:.35}50%{transform:scale(1.04);opacity:.9}}
+.h-orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
+.h-orb1{width:700px;height:700px;background:radial-gradient(circle,rgba(20,80,40,.22) 0%,transparent 60%);top:-250px;right:-200px;animation:od 13s ease-in-out infinite}
+.h-orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(201,168,76,.08) 0%,transparent 60%);bottom:-150px;left:5%;animation:od 10s ease-in-out infinite reverse 2s}
+.h-orb3{width:350px;height:350px;background:radial-gradient(circle,rgba(30,120,70,.1) 0%,transparent 60%);top:35%;left:-100px;animation:od 16s ease-in-out infinite 4s}
+@keyframes od{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.08)}66%{transform:translate(-20px,22px) scale(.95)}}
+.h-parts{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.pt{position:absolute;border-radius:50%;animation:pf linear infinite}
+@keyframes pf{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:.7;transform:translateY(80vh) scale(1)}90%{opacity:.2}100%{transform:translateY(-10vh) scale(.4);opacity:0}}
+.h-cnt{position:relative;z-index:2;text-align:center;padding:0 28px;max-width:1000px}
+.h-badge{display:inline-flex;align-items:center;gap:12px;font-size:9.5px;font-weight:300;letter-spacing:9px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,168,76,.3);padding:10px 32px;margin-bottom:44px;animation:hfd 1.2s cubic-bezier(.4,0,.2,1) both;position:relative;overflow:hidden;background:rgba(201,168,76,.04)}
+.h-badge::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(201,168,76,.12),transparent);transform:translateX(-100%);animation:shim 4s ease-in-out infinite 2s}
+@keyframes shim{to{transform:translateX(200%)}}
+.h-bdot{width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;box-shadow:0 0 8px rgba(201,168,76,.6)}
+.h-title{font-family:'Cormorant Garamond',serif;font-size:clamp(52px,9.5vw,120px);font-weight:300;line-height:.88;color:var(--cream);margin-bottom:14px;animation:hfu 1.2s cubic-bezier(.4,0,.2,1) .25s both}
+.h-title em{font-style:italic;background:linear-gradient(135deg,var(--gold-light),var(--gold),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.h-sub{font-family:'Cinzel',serif;font-size:clamp(18px,2.8vw,40px);font-weight:600;letter-spacing:7px;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:32px;animation:hfu 1.2s cubic-bezier(.4,0,.2,1) .42s both}
+.h-tag{font-size:14px;font-weight:300;color:var(--text-light);letter-spacing:3px;margin-bottom:60px;animation:hfu 1.2s cubic-bezier(.4,0,.2,1) .58s both}
+.h-acts{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;animation:hfu 1.2s cubic-bezier(.4,0,.2,1) .74s both}
+@keyframes hfd{from{opacity:0;transform:translateY(-32px)}to{opacity:1;transform:translateY(0)}}
+@keyframes hfu{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+.h-scr{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;z-index:5;animation:hfu 1s ease 1.4s both}
+.h-scr-lbl{font-size:8.5px;letter-spacing:5px;color:var(--gold);opacity:.7;text-transform:uppercase}
+.h-scr-line{width:1px;height:52px;background:rgba(201,168,76,.12);position:relative;overflow:hidden}
+.h-scr-fill{position:absolute;top:-100%;width:100%;height:100%;background:linear-gradient(to bottom,transparent,var(--gold-light),var(--gold));animation:sd 2.4s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes sd{0%{top:-100%;opacity:0}15%{opacity:1}80%{opacity:.8}100%{top:100%;opacity:0}}
+
+/* BUTTONS */
+.btn-p{background:linear-gradient(135deg,var(--gold),var(--gold-light));background-size:200% 200%;background-position:0% 50%;color:var(--g1);font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;padding:18px 48px;border:none;cursor:pointer;border-radius:2px;transition:all .4s cubic-bezier(.4,0,.2,1);text-decoration:none;display:inline-block;box-shadow:0 4px 28px rgba(201,168,76,.25)}
+.btn-p:hover{background-position:100% 50%;transform:translateY(-5px) scale(1.02);box-shadow:0 22px 56px rgba(201,168,76,.55)}
+.btn-p span{position:relative;z-index:1}
+.btn-o{background:transparent;color:var(--gold);font-family:'Cinzel',serif;font-size:11px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;padding:17px 48px;border:1px solid rgba(201,168,76,.5);cursor:pointer;border-radius:2px;transition:all .4s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;text-decoration:none;display:inline-block}
+.btn-o::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gold),var(--gold-light));clip-path:inset(0 100% 0 0);transition:clip-path .4s cubic-bezier(.4,0,.2,1)}
+.btn-o:hover::before{clip-path:inset(0 0% 0 0)}
+.btn-o:hover{color:var(--g1);transform:translateY(-5px);box-shadow:0 18px 44px rgba(201,168,76,.35)}
+.btn-o span{position:relative;z-index:1}
+
+/* SECTION COMMONS */
+section{padding:120px 0}
+.ctr{max-width:1340px;margin:0 auto;padding:0 52px}
+.s-lbl{font-size:9.5px;font-weight:300;letter-spacing:8px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:block}
+.s-title{font-family:'Cormorant Garamond',serif;font-size:clamp(38px,5.5vw,70px);font-weight:300;color:var(--cream);line-height:1;margin-bottom:24px}
+.s-title em{background:linear-gradient(135deg,var(--gold-light),var(--gold),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-style:italic}
+.s-div{width:0;height:1px;background:linear-gradient(90deg,var(--gold),var(--accent),transparent);margin-bottom:36px;transition:width 1.2s cubic-bezier(.4,0,.2,1) .3s}
+.s-div.visible{width:80px}
+.s-txt{font-size:15.5px;font-weight:300;color:var(--text-light);line-height:2;max-width:560px}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(48px);transition:opacity .9s cubic-bezier(.4,0,.2,1),transform .9s cubic-bezier(.4,0,.2,1)}
+.rv.visible{opacity:1;transform:translateY(0)}
+.rl{opacity:0;transform:translateX(-52px);transition:opacity .9s cubic-bezier(.4,0,.2,1),transform .9s cubic-bezier(.4,0,.2,1)}
+.rl.visible{opacity:1;transform:translateX(0)}
+.rr{opacity:0;transform:translateX(52px);transition:opacity .9s cubic-bezier(.4,0,.2,1),transform .9s cubic-bezier(.4,0,.2,1)}
+.rr.visible{opacity:1;transform:translateX(0)}
+
+/* ABOUT */
+.abt-sec{background:var(--g2);position:relative;overflow:hidden}
+.abt-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 80% 50%,rgba(30,100,50,.06) 0%,transparent 60%);pointer-events:none}
+.abt-sec::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),rgba(61,158,106,.15),transparent)}
+.abt-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.abt-card{background:linear-gradient(145deg,var(--g4),var(--g1));border:1px solid rgba(201,168,76,.15);padding:56px;position:relative;overflow:hidden;transition:border-color .5s,box-shadow .5s}
+.abt-card:hover{border-color:rgba(201,168,76,.35);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.abt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--accent-light),var(--gold),transparent);transform:scaleX(0);transition:transform .8s;transform-origin:left}
+.abt-card:hover::before{transform:scaleX(1)}
+.abt-card::after{content:'';position:absolute;bottom:-80px;right:-80px;width:220px;height:220px;border-radius:50%;border:1px solid rgba(201,168,76,.05)}
+.abt-ring{position:absolute;bottom:-40px;right:-40px;width:110px;height:110px;border-radius:50%;border:1px solid rgba(201,168,76,.08)}
+.abt-q{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--gold-light);font-style:italic;margin-bottom:20px;line-height:1.55}
+.abt-sg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:40px}
+.si{text-align:center;padding:26px 14px;border:1px solid rgba(201,168,76,.1);background:rgba(201,168,76,.02);transition:all .4s cubic-bezier(.4,0,.2,1);cursor:default;position:relative;overflow:hidden}
+.si::before{content:'';position:absolute;inset:0;background:linear-gradient(145deg,rgba(201,168,76,.08),rgba(61,158,106,.04));opacity:0;transition:opacity .4s}
+.si::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--accent));transition:width .4s}
+.si:hover{border-color:rgba(201,168,76,.45);transform:translateY(-5px);box-shadow:0 20px 44px rgba(0,0,0,.4)}
+.si:hover::before{opacity:1}
+.si:hover::after{width:80%}
+.si-n{font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:300;color:var(--gold);display:block;line-height:1;position:relative;z-index:1}
+.si-l{font-size:9.5px;letter-spacing:3.5px;color:var(--text-mid);text-transform:uppercase;margin-top:8px;display:block;position:relative;z-index:1}
+.fl{list-style:none;margin-top:32px}
+.fl li{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(201,168,76,.07);font-size:14.5px;color:var(--text-light);cursor:default;transition:all .35s;position:relative}
+.fl li::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,var(--gold),var(--accent),transparent);transform:scaleX(0);transition:transform .4s;transform-origin:left}
+.fl li:hover{color:var(--cream);padding-left:10px}
+.fl li:hover::after{transform:scaleX(1)}
+.fdot{width:5px;height:5px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--accent));flex-shrink:0;box-shadow:0 0 6px rgba(61,158,106,.4)}
+
+/* ROOMS SLIDER */
+.rm-sec{background:var(--g1);overflow:hidden}
+.rm-outer{position:relative;overflow:hidden}
+.rm-track{display:flex;transition:transform .9s cubic-bezier(.4,0,.2,1);will-change:transform}
+.rm-card{position:relative;overflow:hidden;height:580px;flex-shrink:0;cursor:pointer;background:var(--g4)}
+.rm-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.06);filter:brightness(.55) saturate(.9);transition:transform 1s cubic-bezier(.4,0,.2,1),filter .8s}
+.rm-card:hover img{transform:scale(1.13);filter:brightness(.4) saturate(1.1)}
+.rm-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(4,16,13,1) 0%,rgba(4,16,13,.7) 45%,rgba(4,16,13,.15) 75%,transparent 100%);transition:all .6s}
+.rm-card:hover .rm-grad{background:linear-gradient(to top,rgba(4,16,13,1) 0%,rgba(4,16,13,.88) 55%,rgba(4,16,13,.4) 80%,rgba(4,16,13,.08) 100%)}
+.rm-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;z-index:5;background:linear-gradient(to bottom,var(--gold-light),var(--gold),var(--accent),transparent);transform:scaleY(0);transform-origin:top;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.rm-card:hover::before{transform:scaleY(1)}
+.rm-cnt{position:absolute;bottom:0;left:0;right:0;padding:40px;z-index:3}
+.rm-price{font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--gold);letter-spacing:2.5px;margin-bottom:8px}
+.rm-name{font-family:'Cinzel',serif;font-size:21px;font-weight:600;color:var(--cream);margin-bottom:10px}
+.rm-meta{display:flex;gap:20px;font-size:11.5px;color:var(--text-mid);letter-spacing:1.5px;margin-bottom:16px}
+.rm-desc{font-size:13.5px;color:var(--text-light);line-height:1.7;opacity:0;transform:translateY(14px);max-height:0;overflow:hidden;transition:all .5s cubic-bezier(.4,0,.2,1)}
+.rm-card:hover .rm-desc{opacity:1;transform:translateY(0);max-height:80px;margin-bottom:20px}
+.rm-btn{background:transparent;color:var(--gold);font-family:'Cinzel',serif;font-size:9.5px;font-weight:600;letter-spacing:3px;padding:10px 26px;border:1px solid rgba(201,168,76,.45);cursor:pointer;opacity:0;transform:translateY(12px);transition:all .45s cubic-bezier(.4,0,.2,1) .08s;position:relative;overflow:hidden}
+.rm-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gold),var(--gold-light));clip-path:inset(0 100% 0 0);transition:clip-path .35s}
+.rm-btn:hover::before{clip-path:inset(0 0% 0 0)}
+.rm-btn:hover{color:var(--g1);border-color:var(--gold)}
+.rm-btn span{position:relative;z-index:1}
+.rm-card:hover .rm-btn{opacity:1;transform:translateY(0)}
+.sl-pw{height:2px;background:rgba(201,168,76,.08);width:100%}
+.sl-pb{height:100%;background:linear-gradient(90deg,var(--gold),var(--accent),var(--gold-light))}
+.sl-ft{display:flex;align-items:center;justify-content:space-between;padding:28px 52px 0}
+.sl-ctr{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text-mid);letter-spacing:2px}
+.sl-ctr span{color:var(--gold)}
+.sl-dots{display:flex;gap:10px;align-items:center}
+.sl-dot{width:6px;height:6px;border-radius:50%;background:rgba(201,168,76,.2);cursor:pointer;transition:all .4s;border:none}
+.sl-dot.act{background:var(--gold);width:28px;border-radius:3px}
+.sl-pbtn{width:44px;height:44px;border-radius:50%;border:1px solid rgba(201,168,76,.3);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gold);transition:all .35s}
+.sl-pbtn:hover{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--g1);border-color:var(--gold);transform:scale(1.1)}
+
+/* AMENITIES */
+.am-sec{background:var(--g2);position:relative;overflow:hidden}
+.am-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(201,168,76,.06)}
+.am-card{background:var(--g4);padding:48px 20px;text-align:center;position:relative;overflow:hidden;transition:all .45s cubic-bezier(.4,0,.2,1);cursor:default;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.am-card::before{content:'';position:absolute;inset:0;background:linear-gradient(145deg,rgba(201,168,76,.06),rgba(61,158,106,.04));opacity:0;transition:opacity .45s}
+.am-card::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--accent),transparent);transition:width .5s}
+.am-card:hover{background:var(--g5);transform:translateY(-8px);box-shadow:0 28px 64px rgba(0,0,0,.6),0 0 0 1px rgba(201,168,76,.2);z-index:1}
+.am-card:hover::before{opacity:1}
+.am-card:hover::after{width:70%}
+.am-ic{margin-bottom:20px;display:flex;align-items:center;justify-content:center;transition:transform .45s;width:64px;height:64px;border:1px solid rgba(201,168,76,.15);border-radius:50%;background:rgba(201,168,76,.04)}
+.am-card:hover .am-ic{transform:scale(1.15) translateY(-4px);border-color:rgba(201,168,76,.4);box-shadow:0 0 24px rgba(201,168,76,.15)}
+.am-nm{font-family:'Cinzel',serif;font-size:10.5px;font-weight:600;letter-spacing:2.5px;color:var(--gold);text-transform:uppercase;margin-bottom:10px}
+.am-ds{font-size:12.5px;color:var(--text-mid);line-height:1.75}
+
+/* BANQUET */
+.bq-sec{background:var(--g1);position:relative;overflow:hidden}
+.bq-sec::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),rgba(61,158,106,.15),transparent)}
+.bq-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.bq-im{position:relative;height:480px;overflow:hidden}
+.bq-im img{width:100%;height:100%;object-fit:cover;filter:brightness(.8) saturate(.9);transition:transform .8s,filter .6s}
+.bq-im:hover img{transform:scale(1.04);filter:brightness(.9) saturate(1.05)}
+.bq-im::before{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(4,16,13,.5) 0%,transparent 60%);z-index:1}
+.bq-im::after{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--gold),var(--accent));z-index:2}
+.bq-ig{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bq-is{overflow:hidden;height:155px;position:relative;cursor:pointer}
+.bq-is img{width:100%;height:100%;object-fit:cover;filter:brightness(.75);transition:transform .7s,filter .5s}
+.bq-is:hover img{transform:scale(1.08);filter:brightness(.9)}
+.bq-fts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:40px}
+.bq-ft{background:rgba(201,168,76,.02);border:1px solid rgba(201,168,76,.1);padding:26px;position:relative;overflow:hidden;transition:all .4s;cursor:default}
+.bq-ft::before{content:'';position:absolute;top:0;left:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--gold),var(--accent));transform:scaleY(0);transition:transform .4s;transform-origin:bottom}
+.bq-ft:hover::before{transform:scaleY(1)}
+.bq-ft:hover{background:rgba(201,168,76,.07);border-color:rgba(201,168,76,.3);transform:translateY(-3px) translateX(4px)}
+.bq-ft-t{font-family:'Cinzel',serif;font-size:10px;color:var(--gold);letter-spacing:2.5px}
+.bq-cb{display:inline-flex;align-items:center;gap:12px;margin-top:32px;padding:16px 24px;border:1px solid rgba(201,168,76,.2);background:rgba(201,168,76,.04)}
+.bq-cn{font-family:'Cormorant Garamond',serif;font-size:40px;color:var(--gold);font-weight:300;line-height:1}
+.bq-cl{font-family:'Cinzel',serif;font-size:9px;color:var(--text-mid);letter-spacing:3px;text-transform:uppercase;line-height:1.6}
+
+/* RESTAURANT */
+.rs-sec{background:var(--g2)}
+.rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+.rs-iw{position:relative}
+.rs-im{height:400px;overflow:hidden;position:relative}
+.rs-im img{width:100%;height:100%;object-fit:cover;filter:brightness(.8);transition:transform .8s,filter .6s}
+.rs-im:hover img{transform:scale(1.04);filter:brightness(.9)}
+.rs-im::after{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(to top,var(--g2),transparent)}
+.rs-fg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.rs-fi{height:100px;overflow:hidden}
+.rs-fi img{width:100%;height:100%;object-fit:cover;filter:brightness(.75);transition:transform .6s,filter .4s}
+.rs-fi:hover img{transform:scale(1.1);filter:brightness(.95)}
+.m-tabs{display:flex;gap:2px;margin-bottom:36px}
+.m-tab{padding:12px 20px;font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:2.5px;cursor:pointer;border:1px solid rgba(201,168,76,.15);background:transparent;color:var(--text-mid);transition:all .35s;white-space:nowrap}
+.m-tab.act{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--g1);border-color:var(--gold)}
+.m-tab:hover:not(.act){border-color:var(--gold);color:var(--gold)}
+.m-items{display:flex;flex-direction:column;min-height:240px}
+.m-item{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 0;border-bottom:1px solid rgba(201,168,76,.07);transition:all .35s;cursor:default;position:relative}
+.m-item::after{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:3px;height:0;background:linear-gradient(to bottom,var(--gold),var(--accent));transition:height .35s}
+.m-item:hover{padding-left:12px}
+.m-item:hover::after{height:60%}
+.m-in{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--cream)}
+.m-id{font-size:12px;color:var(--text-mid);margin-top:3px}
+.m-ip{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--gold);white-space:nowrap;margin-left:16px}
+
+/* GALLERY */
+.gl-sec{background:var(--g2);padding:120px 0}
+.gl-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,260px);gap:4px}
+.gl-item{overflow:hidden;cursor:pointer;position:relative;background:var(--g4)}
+.gl-item:nth-child(1){grid-column:span 2;grid-row:span 2}
+.gl-item img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.7);transition:transform .8s cubic-bezier(.4,0,.2,1),filter .6s}
+.gl-item:hover img{transform:scale(1.08);filter:brightness(.85)}
+.gl-ov{position:absolute;inset:0;background:rgba(4,16,13,.5);opacity:0;transition:opacity .5s;display:flex;align-items:center;justify-content:center;z-index:2}
+.gl-item:hover .gl-ov{opacity:1}
+.gl-lbl{font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:3px;margin-top:10px;text-transform:uppercase;transform:translateY(10px);transition:transform .4s .1s}
+.gl-item:hover .gl-lbl{transform:translateY(0)}
+
+/* ATTRACTIONS INFINITE */
+.at-sec{background:var(--g1);overflow:hidden}
+.at-inf{position:relative;overflow:hidden}
+.at-inf::before,.at-inf::after{content:'';position:absolute;top:0;bottom:0;width:160px;z-index:5;pointer-events:none}
+.at-inf::before{left:0;background:linear-gradient(to right,var(--g1),transparent)}
+.at-inf::after{right:0;background:linear-gradient(to left,var(--g1),transparent)}
+.at-tw{display:flex;gap:20px;animation:atl 30s linear infinite;width:max-content}
+.at-tw:hover{animation-play-state:paused}
+@keyframes atl{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.at-card{border:1px solid rgba(201,168,76,.1);padding:36px;background:var(--g4);position:relative;overflow:hidden;transition:all .45s cubic-bezier(.4,0,.2,1);cursor:default;width:310px;flex-shrink:0}
+.at-card::before{content:'';position:absolute;inset:0;background:linear-gradient(145deg,rgba(201,168,76,.04),rgba(61,158,106,.03));opacity:0;transition:opacity .45s}
+.at-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--accent-light),transparent);transform:scaleX(0);transform-origin:left;transition:transform .5s}
+.at-card:hover{transform:translateY(-8px);border-color:rgba(201,168,76,.3);box-shadow:0 30px 68px rgba(0,0,0,.5)}
+.at-card:hover::before{opacity:1}
+.at-card:hover::after{transform:scaleX(1)}
+.at-ic{margin-bottom:18px;width:52px;height:52px;border:1px solid rgba(201,168,76,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,.04);transition:all .45s}
+.at-card:hover .at-ic{transform:scale(1.2) translateY(-4px);border-color:var(--gold);box-shadow:0 0 24px rgba(201,168,76,.2)}
+.at-nm{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold);letter-spacing:2.5px;margin-bottom:10px;text-transform:uppercase}
+.at-dt{font-size:11px;color:var(--text-mid);letter-spacing:2px;margin-bottom:12px}
+.at-ds{font-size:13px;color:var(--text-light);line-height:1.8}
+
+/* TESTIMONIALS */
+.ts-sec{background:var(--g2);position:relative;overflow:hidden}
+.ts-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(201,168,76,.03) 0%,transparent 60%);pointer-events:none}
+.ts-outer{position:relative;overflow:hidden}
+.ts-track{display:flex;transition:transform .9s cubic-bezier(.4,0,.2,1);will-change:transform}
+.ts-card{min-width:100%;flex-shrink:0;background:var(--g4);border:1px solid rgba(201,168,76,.1);padding:56px 64px;position:relative;overflow:hidden}
+.ts-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-left:1px solid rgba(201,168,76,.12);border-bottom:1px solid rgba(201,168,76,.12)}
+.ts-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--accent),transparent)}
+.ts-q{font-family:'Cormorant Garamond',serif;font-size:90px;color:var(--gold);opacity:.12;line-height:.4;margin-bottom:24px;display:block}
+.ts-txt{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--cream);line-height:1.75;margin-bottom:32px;max-width:760px}
+.ts-au{font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:2.5px}
+.ts-lo{font-size:13px;color:var(--text-mid);margin-top:6px}
+.ts-stars{letter-spacing:3px;margin-bottom:24px;font-size:15px;color:var(--gold)}
+.ts-foot{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:40px}
+.ts-dot{width:6px;height:6px;border-radius:50%;background:rgba(201,168,76,.2);cursor:pointer;transition:all .4s;border:none}
+.ts-dot.act{background:var(--gold);width:28px;border-radius:3px}
+.ts-nav{width:48px;height:48px;border-radius:50%;border:1px solid rgba(201,168,76,.3);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gold);transition:all .35s}
+.ts-nav:hover{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--g1);border-color:var(--gold);transform:scale(1.1)}
+
+/* BOOKING */
+.bk-sec{background:var(--g1);position:relative;overflow:hidden}
+.bk-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 50%,rgba(30,100,50,.04) 0%,transparent 50%);pointer-events:none}
+.bk-grid{display:grid;grid-template-columns:1fr 1fr;gap:96px;align-items:start}
+.bk-form{background:linear-gradient(145deg,var(--g4),var(--g1));border:1px solid rgba(201,168,76,.15);padding:56px;position:relative;overflow:hidden;transition:border-color .4s,box-shadow .4s}
+.bk-form:hover{border-color:rgba(201,168,76,.28);box-shadow:0 28px 72px rgba(0,0,0,.5)}
+.bk-form::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--accent),var(--gold),transparent)}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.f-grp{margin-bottom:22px}
+.f-lbl{display:block;font-family:'Cinzel',serif;font-size:9px;letter-spacing:3.5px;color:var(--gold);text-transform:uppercase;margin-bottom:10px}
+.f-in,.f-sel{width:100%;background:rgba(255,255,255,.02);border:1px solid rgba(201,168,76,.15);color:var(--cream);padding:14px 18px;font-family:'Jost',sans-serif;font-size:14px;outline:none;transition:all .35s;border-radius:2px;appearance:none}
+.f-in:focus,.f-sel:focus{border-color:var(--gold);background:rgba(201,168,76,.04);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
+.f-in::placeholder{color:rgba(189,176,154,.3)}
+.f-sel option{background:var(--g1);color:var(--cream)}
+.f-sub{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-light));background-size:200% 200%;color:var(--g1);font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:4px;padding:20px;border:none;cursor:pointer;text-transform:uppercase;transition:all .4s cubic-bezier(.4,0,.2,1);border-radius:2px;margin-top:8px}
+.f-sub:hover{background-position:100% 50%;transform:translateY(-4px);box-shadow:0 20px 52px rgba(201,168,76,.5)}
+.ci{padding-top:28px}
+.ci-item{display:flex;align-items:flex-start;gap:20px;margin-bottom:36px;cursor:default}
+.ci-ic{width:52px;height:52px;border:1px solid rgba(201,168,76,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);transition:all .4s cubic-bezier(.4,0,.2,1)}
+.ci-item:hover .ci-ic{background:rgba(201,168,76,.1);border-color:var(--gold);transform:scale(1.1) rotate(5deg);box-shadow:0 8px 24px rgba(201,168,76,.25)}
+.ci-title{font-family:'Cinzel',serif;font-size:10.5px;color:var(--gold);letter-spacing:2.5px}
+.ci-det{font-size:14px;color:var(--text-light);margin-top:5px;line-height:1.75}
+
+/* FOOTER */
+.ft{background:#020a06;padding:0;position:relative;overflow:hidden}
+.ft::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(61,158,106,.03) 0%,transparent 50%);pointer-events:none}
+.ft-tb{height:3px;background:linear-gradient(90deg,transparent,var(--gold),var(--accent-light),var(--gold),transparent)}
+.ft-in{padding:80px 0 0}
+.ft-sr{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(201,168,76,.06);margin-bottom:72px}
+.ft-st{background:rgba(4,16,13,.8);padding:36px 20px;text-align:center;position:relative;overflow:hidden}
+.ft-st::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--accent));transition:width .5s}
+.ft-st:hover::after{width:70%}
+.ft-sn{font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:300;color:var(--gold);display:block;line-height:1}
+.ft-sl{font-size:9px;letter-spacing:3px;color:var(--text-mid);text-transform:uppercase;margin-top:8px;display:block}
+.ft-grid{display:grid;grid-template-columns:2.4fr 1fr 1fr 1.6fr;gap:56px;margin-bottom:72px}
+.ft-bt{font-family:'Cinzel',serif;font-size:22px;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:3px;margin-bottom:6px}
+.ft-bs{font-size:9px;letter-spacing:6px;color:var(--text-mid);text-transform:uppercase;margin-bottom:22px}
+.ft-bd{font-size:13.5px;color:var(--text-mid);line-height:1.9;max-width:290px}
+.ft-ct{font-family:'Cinzel',serif;font-size:10.5px;color:var(--gold);letter-spacing:3.5px;text-transform:uppercase;margin-bottom:28px;padding-bottom:14px;border-bottom:1px solid rgba(201,168,76,.12);position:relative}
+.ft-ct::after{content:'';position:absolute;bottom:-1px;left:0;width:28px;height:1px;background:var(--accent)}
+.ft-lks{list-style:none}
+.ft-lks li{margin-bottom:13px}
+.ft-lks a{font-size:13.5px;color:var(--text-mid);text-decoration:none;transition:all .35s;display:inline-flex;align-items:center;gap:8px}
+.ft-lks a::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:0;transform:translateX(-8px);transition:all .35s;flex-shrink:0}
+.ft-lks a:hover{color:var(--gold);padding-left:4px}
+.ft-lks a:hover::before{opacity:1;transform:translateX(0)}
+.ft-soc{display:flex;gap:10px;margin-top:30px}
+.s-btn{width:42px;height:42px;border:1px solid rgba(201,168,76,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text-mid);cursor:pointer;text-decoration:none;transition:all .4s cubic-bezier(.4,0,.2,1)}
+.s-btn:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-5px) rotate(8deg);box-shadow:0 10px 28px rgba(201,168,76,.3);background:rgba(201,168,76,.06)}
+.ft-nlt{font-family:'Cinzel',serif;font-size:10px;color:var(--gold);letter-spacing:3px;margin-bottom:14px}
+.ft-nlf{display:flex;gap:0}
+.ft-nli{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);border-right:none;color:var(--cream);padding:12px 16px;font-family:'Jost',sans-serif;font-size:13px;outline:none;transition:border-color .3s}
+.ft-nli:focus{border-color:rgba(201,168,76,.4)}
+.ft-nli::placeholder{color:rgba(122,110,94,.6)}
+.ft-nlb{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--g1);border:none;padding:12px 20px;cursor:pointer;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;font-weight:700;transition:all .35s;flex-shrink:0}
+.ft-nlb:hover{box-shadow:0 6px 24px rgba(201,168,76,.4)}
+.ft-aw{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+.ft-a{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid rgba(201,168,76,.12);background:rgba(201,168,76,.02)}
+.ft-at{font-family:'Cinzel',serif;font-size:8px;color:var(--text-mid);letter-spacing:1.5px;line-height:1.5}
+.ft-div{height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),rgba(61,158,106,.1),transparent)}
+.ft-bot{padding:28px 0;display:flex;justify-content:space-between;align-items:center}
+.ft-bxt{font-size:12.5px;color:var(--text-mid)}
+.ft-bxt span{color:var(--gold)}
+.ft-bls{display:flex;gap:28px}
+.ft-bls a{font-size:12px;color:var(--text-mid);text-decoration:none;transition:color .3s;letter-spacing:1px}
+.ft-bls a:hover{color:var(--gold)}
+
+/* WHATSAPP & BACK TO TOP */
+.wa-fl{position:fixed;bottom:40px;right:40px;z-index:991;background:rgba(4,16,13,.92);color:rgba(37,211,102,.75);width:52px;height:52px;border-radius:50%;border:1px solid rgba(37,211,102,.25);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.5);text-decoration:none;transition:all .4s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(12px)}
+.wa-fl:hover{background:rgba(37,211,102,.15);color:rgba(37,211,102,.95);border-color:rgba(37,211,102,.5);transform:translateY(-4px);box-shadow:0 12px 32px rgba(37,211,102,.2)}
+.btt{position:fixed;bottom:36px;left:36px;z-index:990;width:48px;height:48px;border-radius:50%;background:rgba(4,16,13,.92);border:1px solid rgba(201,168,76,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .4s cubic-bezier(.4,0,.2,1);opacity:0;transform:translateY(24px) scale(.9);backdrop-filter:blur(12px);color:var(--gold)}
+.btt.vis{opacity:1;transform:translateY(0) scale(1)}
+.btt:hover{background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:var(--gold);color:var(--g1);transform:translateY(-5px) scale(1.1);box-shadow:0 12px 36px rgba(201,168,76,.5)}
+
+/* ALERT / TOAST */
+.toast-wrap{position:fixed;top:96px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{font-family:'Cinzel',serif;font-size:10.5px;font-weight:600;letter-spacing:2px;padding:16px 24px 16px 20px;border-radius:2px;display:flex;align-items:center;gap:12px;transform:translateX(120%);opacity:0;transition:all .45s cubic-bezier(.4,0,.2,1);pointer-events:none;max-width:340px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(0);opacity:1}
+.toast.success{background:linear-gradient(135deg,var(--g5),var(--g3));border:1px solid rgba(61,158,106,.4);color:var(--accent-light)}
+.toast.info{background:linear-gradient(135deg,var(--g4),var(--g2));border:1px solid rgba(201,168,76,.35);color:var(--gold-light)}
+.toast.warn{background:linear-gradient(135deg,#2a1a08,#1a0d04);border:1px solid rgba(201,140,60,.4);color:#E8B870}
+.toast-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.toast.success .toast-dot{background:var(--accent-light);box-shadow:0 0 8px var(--accent)}
+.toast.info .toast-dot{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.toast.warn .toast-dot{background:#E8B870;box-shadow:0 0 8px #E8B870}
+
+/* SEC SCROLL */
+.sec-sc{display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:72px;cursor:pointer;opacity:.6;transition:opacity .3s}
+.sec-sc:hover{opacity:1}
+.sec-sc-l{font-size:8px;letter-spacing:4px;color:var(--gold);text-transform:uppercase}
+.sec-sc-t{width:1px;height:48px;background:rgba(201,168,76,.1);position:relative;overflow:hidden}
+.sec-sc-f{position:absolute;top:-100%;width:100%;height:100%;background:linear-gradient(to bottom,transparent,var(--gold));animation:sd 2.8s ease-in-out infinite}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .abt-grid,.bq-grid,.rs-grid,.bk-grid{grid-template-columns:1fr;gap:56px}
+  .ft-grid{grid-template-columns:1fr 1fr;gap:44px}
+  .gl-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,200px)}
+  .gl-item:nth-child(1){grid-column:span 2}
+  .am-grid{grid-template-columns:repeat(4,1fr)}
+  .ft-sr{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+  .nb{padding:0 20px}
+  .nb-links{display:none}
+  .hbg{display:flex}
+  .mm{display:flex}
+  .ctr{padding:0 20px}
+  section{padding:72px 0}
+  .am-grid{grid-template-columns:repeat(2,1fr)}
+  .ft-grid{grid-template-columns:1fr}
+  .gl-grid{grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,150px)}
+  .gl-item:nth-child(1){grid-column:span 2;grid-row:span 1}
+  .f-row{grid-template-columns:1fr}
+  .bq-fts{grid-template-columns:1fr}
+  .abt-sg{grid-template-columns:1fr 1fr}
+  .h-acts{flex-direction:column;align-items:center}
+  .ft-bot{flex-direction:column;gap:14px;text-align:center}
+  .ts-card{padding:36px 28px}
+  .ts-txt{font-size:18px}
+  .btt{display:none!important}
+  .wa-fl{bottom:24px;right:20px;width:48px;height:48px}
+  .sl-ft{padding:18px 20px 0}
+  .ft-sr{grid-template-columns:repeat(2,1fr)}
+  .ft-nlf{flex-direction:column;gap:8px}
+  .ft-nli{border-right:1px solid rgba(201,168,76,.15)}
+  .ft-bls{flex-direction:column;gap:12px;align-items:center}
+}
+@media(max-width:480px){
+  .am-grid{grid-template-columns:repeat(2,1fr)}
+  .gl-grid{grid-template-columns:1fr;grid-template-rows:auto}
+  .gl-item{height:200px}
+  .gl-item:nth-child(1){grid-column:span 1}
+  .m-tabs{flex-wrap:wrap}
+}
+`;
+
+/* ── DATA ── */
 const rooms = [
-  { name:"Premium Suite",  price:"₹10,500 / Night", desc:"Panoramic views with artisan décor and handcrafted wooden furnishings.", bathrooms:2, occupancy:5, bg:"linear-gradient(165deg,#1a1f3a 0%,#0d0f20 50%,#07090f 100%)" },
-  { name:"Luxury Suite",   price:"₹11,500 / Night", desc:"Signature stone bathtub — the finest choice for couples seeking romance.", bathrooms:2, occupancy:5, bg:"linear-gradient(165deg,#2a1530 0%,#1a0d20 50%,#07090f 100%)" },
-  { name:"Nature Cottage", price:"₹8,500 / Night",  desc:"Bamboo-walled sanctuary merging with the forest — truly restorative.", bathrooms:1, occupancy:3, bg:"linear-gradient(165deg,#152318 0%,#0d1710 50%,#07090f 100%)" },
-  { name:"Riverside Room", price:"₹9,200 / Night",  desc:"Direct balcony views of the sacred river. Perfect for pilgrims.", bathrooms:1, occupancy:2, bg:"linear-gradient(165deg,#0d2030 0%,#081520 50%,#07090f 100%)" },
-  { name:"Heritage Villa", price:"₹14,000 / Night", desc:"Sprawling private villa with Awadhi architecture and butler service.", bathrooms:3, occupancy:8, bg:"linear-gradient(165deg,#301508 0%,#1e0d05 50%,#07090f 100%)" },
-  { name:"Forest Chalet",  price:"₹7,800 / Night",  desc:"Secluded wooden chalet surrounded by tall trees for natural wellness.", bathrooms:1, occupancy:2, bg:"linear-gradient(165deg,#182510 0%,#101808 50%,#07090f 100%)" },
-  { name:"Royal Chamber",  price:"₹13,500 / Night", desc:"Mughal-inspired grandeur: inlay marble floors, silk drapes, antiques.", bathrooms:2, occupancy:4, bg:"linear-gradient(165deg,#2a1500 0%,#1a0d00 50%,#07090f 100%)" },
-  { name:"Garden Suite",   price:"₹9,800 / Night",  desc:"Private manicured garden — ideal for morning yoga and meditation.", bathrooms:2, occupancy:4, bg:"linear-gradient(165deg,#182018 0%,#101510 50%,#07090f 100%)" },
+  {name:"Premium Suite",  price:"₹10,500 / Night",desc:"Panoramic views with artisan décor and handcrafted wooden furnishings.",bathrooms:2,occupancy:5,img:IMG.premiumSuite},
+  {name:"Luxury Suite",   price:"₹11,500 / Night",desc:"Signature stone bathtub — the finest choice for couples seeking romance.",bathrooms:2,occupancy:5,img:IMG.luxurySuite},
+  {name:"Nature Cottage", price:"₹8,500 / Night", desc:"Bamboo-walled sanctuary merging with the forest — truly restorative.",bathrooms:1,occupancy:3,img:IMG.natureCottage},
+  {name:"Riverside Room", price:"₹9,200 / Night", desc:"Direct balcony views of the sacred river. Perfect for pilgrims.",bathrooms:1,occupancy:2,img:IMG.riversideRoom},
+  {name:"Heritage Villa", price:"₹14,000 / Night",desc:"Sprawling private villa with Awadhi architecture and butler service.",bathrooms:3,occupancy:8,img:IMG.heritageVilla},
+  {name:"Forest Chalet",  price:"₹7,800 / Night", desc:"Secluded wooden chalet surrounded by tall trees for natural wellness.",bathrooms:1,occupancy:2,img:IMG.forestChalet},
+  {name:"Royal Chamber",  price:"₹13,500 / Night",desc:"Mughal-inspired grandeur: inlay marble floors, silk drapes, antiques.",bathrooms:2,occupancy:4,img:IMG.royalChamber},
+  {name:"Garden Suite",   price:"₹9,800 / Night", desc:"Private manicured garden — ideal for morning yoga and meditation.",bathrooms:2,occupancy:4,img:IMG.gardenSuite},
 ];
 
 const amenities = [
-  {Icon:Icon.Wave,  name:"River Views",     desc:"Overlooking sacred Triveni Sangam"},
-  {Icon:Icon.Dining,name:"Fine Dining",     desc:"Multi-cuisine luxury restaurant"},
-  {Icon:Icon.Star,  name:"Banquet Hall",    desc:"Grand events & celebrations"},
-  {Icon:Icon.Clock2,name:"24×7 Service",    desc:"Round-the-clock room service"},
-  {Icon:Icon.Car,   name:"Valet Parking",   desc:"Complimentary secure parking"},
-  {Icon:Icon.Wifi,  name:"High-Speed WiFi", desc:"Seamless connectivity everywhere"},
-  {Icon:Icon.Temple,name:"Spiritual Tours", desc:"Guided Sangam rituals & ghats"},
-  {Icon:Icon.Spa,   name:"Wellness Spa",    desc:"Traditional Ayurvedic treatments"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round"><path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity=".4"/></svg>,nm:"River Views",ds:"Overlooking sacred Triveni Sangam"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>,nm:"Fine Dining",ds:"Multi-cuisine luxury restaurant"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,nm:"Banquet Hall",ds:"Grand events & celebrations"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,nm:"24×7 Service",ds:"Round-the-clock room service"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-3h12l2 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><line x1="9" y1="17" x2="15" y2="17"/></svg>,nm:"Valet Parking",ds:"Complimentary secure parking"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="#C9A84C"/></svg>,nm:"High-Speed WiFi",ds:"Seamless connectivity everywhere"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7h20L12 2z"/><path d="M2 7v2h20V7"/><rect x="4" y="9" width="4" height="13"/><rect x="10" y="9" width="4" height="13"/><rect x="16" y="9" width="4" height="13"/><line x1="2" y1="22" x2="22" y2="22"/></svg>,nm:"Spiritual Tours",ds:"Guided Sangam rituals & ghats"},
+  {ic:<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22C6 22 2 17.5 2 12c0-1.7.4-3.3 1.1-4.8C5.4 11 8.4 13 12 13s6.6-2 8.9-5.8c.7 1.5 1.1 3.1 1.1 4.8 0 5.5-4 10-10 10z"/><path d="M12 13C12 8 15.3 3.7 20 2c0 5.5-3.6 10-8 11z"/><path d="M12 13C12 8 8.7 3.7 4 2c0 5.5 3.6 10 8 11z"/></svg>,nm:"Wellness Spa",ds:"Traditional Ayurvedic treatments"},
 ];
 
 const menuItems = {
   veg:[
-    {name:"Prayagraj Thali",   desc:"12-course traditional meal",      price:"₹850"},
-    {name:"River Herb Risotto",desc:"Seasonal herbs, truffle oil",      price:"₹680"},
-    {name:"Dal Baati Churma",  desc:"Rajasthani classic, ghee-rich",    price:"₹520"},
-    {name:"Masala Dosa Royale",desc:"Crispy, spiced potato filling",    price:"₹420"},
+    {name:"Prayagraj Thali",   desc:"12-course traditional meal with seasonal vegetables",price:"₹850"},
+    {name:"River Herb Risotto",desc:"Seasonal herbs, truffle oil, parmesan crisp",price:"₹680"},
+    {name:"Dal Baati Churma",  desc:"Rajasthani classic, slow-cooked with pure ghee",price:"₹520"},
+    {name:"Masala Dosa Royale",desc:"Crispy fermented crepe, spiced potato filling",price:"₹420"},
+    {name:"Paneer Makhani",    desc:"Cottage cheese in creamy tomato-cashew gravy",price:"₹580"},
+    {name:"Kadhai Sabzi",      desc:"Garden-fresh vegetables, village spices",price:"₹460"},
   ],
   nonveg:[
-    {name:"Lucknowi Biryani",  desc:"Dum-cooked, aromatic spices",      price:"₹980"},
-    {name:"Tandoori Pomfret",  desc:"Fresh river catch, marinated",     price:"₹1,200"},
-    {name:"Butter Chicken",    desc:"Creamy tomato sauce, naan",        price:"₹750"},
-    {name:"Mutton Raan",       desc:"Slow-roasted leg, 12 hours",       price:"₹1,400"},
+    {name:"Lucknowi Biryani",  desc:"Dum-cooked basmati, aromatic whole spices, raita",price:"₹980"},
+    {name:"Tandoori Pomfret",  desc:"Fresh river catch, overnight marinade, ajwain",price:"₹1,200"},
+    {name:"Butter Chicken",    desc:"Classic creamy tomato sauce, house-made naan",price:"₹750"},
+    {name:"Mutton Raan",       desc:"Slow-roasted whole leg, 12-hour Awadhi dum",price:"₹1,400"},
+    {name:"Galauti Kebab",     desc:"Melt-in-mouth minced lamb, ulta tawa paratha",price:"₹860"},
+    {name:"Maachli Fry",       desc:"Gangetic fish, turmeric-mustard batter, chutney",price:"₹680"},
   ],
   beverages:[
-    {name:"Sangam Sunrise",    desc:"Fresh mango, saffron, ginger",     price:"₹280"},
-    {name:"Rose Lassi",        desc:"Thick yogurt, rose water",         price:"₹220"},
-    {name:"Masala Chai",       desc:"House blend, cardamom",            price:"₹180"},
-    {name:"Thandai Special",   desc:"Festival drink, nuts and spices",  price:"₹320"},
-  ]
+    {name:"Sangam Sunrise",    desc:"Fresh mango, saffron, ginger, lime fizz",price:"₹280"},
+    {name:"Rose Lassi",        desc:"Thick yogurt, Kannauj rose water, pistachios",price:"₹220"},
+    {name:"Masala Chai",       desc:"House blend, green cardamom, cinnamon, ginger",price:"₹180"},
+    {name:"Thandai Special",   desc:"Festival drink, mixed nuts, spices, chilled milk",price:"₹320"},
+    {name:"Aam Panna",         desc:"Raw mango, black salt, cumin, mint",price:"₹200"},
+    {name:"Nimbu Sharbat",     desc:"Fresh lemon, black salt, sabja seeds",price:"₹160"},
+  ],
 };
 
 const attractions = [
-  {name:"Triveni Sangam",      dist:"0.5 km", desc:"Sacred confluence of Ganga, Yamuna & Saraswati — holiest bathing ghat in India."},
-  {name:"Saraswati Ghat",      dist:"1.2 km", desc:"Peaceful ghat for boat rides, sunrise views, and evening aarti ceremonies."},
-  {name:"Nagvasuki Temple",    dist:"2.0 km", desc:"Ancient serpent deity temple, believed to be thousands of years old."},
-  {name:"Bade Hanuman Mandir", dist:"1.8 km", desc:"Unique reclining Hanuman idol, believed to protect the region from floods."},
-  {name:"Akshayavat",          dist:"3.0 km", desc:"The immortal banyan tree inside Allahabad Fort, revered across Hindu scriptures."},
-  {name:"Allahabad Fort",      dist:"3.5 km", desc:"Mughal-era fort built by Emperor Akbar in 1583, commanding Sangam views."},
-  {name:"Anand Bhavan",        dist:"4.2 km", desc:"Historic Nehru family mansion, now a museum chronicling India's independence movement."},
-  {name:"Bharadwaj Ashram",    dist:"5.0 km", desc:"Ancient hermitage of sage Bharadwaj, one of the great saptarishi of Hindu mythology."},
+  {nm:"Triveni Sangam",     dt:"0.5 km",ds:"Sacred confluence of Ganga, Yamuna & Saraswati — holiest bathing ghat in India."},
+  {nm:"Saraswati Ghat",     dt:"1.2 km",ds:"Peaceful ghat for boat rides, sunrise views, and evening aarti ceremonies."},
+  {nm:"Nagvasuki Temple",   dt:"2.0 km",ds:"Ancient serpent deity temple, believed to be thousands of years old."},
+  {nm:"Bade Hanuman Mandir",dt:"1.8 km",ds:"Unique reclining Hanuman idol, believed to protect the region from floods."},
+  {nm:"Akshayavat",         dt:"3.0 km",ds:"The immortal banyan tree inside Allahabad Fort, revered across Hindu scriptures."},
+  {nm:"Allahabad Fort",     dt:"3.5 km",ds:"Mughal-era fort built by Emperor Akbar in 1583, commanding Sangam views."},
+  {nm:"Anand Bhavan",       dt:"4.2 km",ds:"Historic Nehru family mansion, now a museum of India's independence movement."},
+  {nm:"Bharadwaj Ashram",   dt:"5.0 km",ds:"Ancient hermitage of sage Bharadwaj, one of the great saptarishi of Hindu mythology."},
 ];
 
 const testimonials = [
-  {text:"The most peaceful escape near the Sangam. The cottage was breathtaking, service impeccable. We will return for Kumbh without a second thought.",author:"Priya & Rohit Sharma",location:"Delhi, India",stars:5},
-  {text:"For our anniversary, Alarkpuri was perfection. The luxury suite felt like a dream — truly magical. The fine dining surpassed every expectation.",author:"Meera Krishnamurthy",location:"Bengaluru, India",stars:5},
-  {text:"We hosted our son's wedding reception here. Every detail was handled with such grace and precision. Extraordinary in every sense of the word.",author:"Suresh & Kamla Agarwal",location:"Lucknow, India",stars:5},
-  {text:"Came for a spiritual retreat and left completely transformed. Proximity to Sangam made morning dips effortless. Staff are incredibly warm.",author:"Dr. Arjun Pillai",location:"Mumbai, India",stars:5},
-  {text:"The Heritage Villa exceeded all our expectations. Our family of six had so much space and comfort. The Awadhi architecture is simply stunning.",author:"Rajesh Malhotra",location:"Kanpur, India",stars:5},
-  {text:"As a solo pilgrim visiting Prayagraj, this resort was a true sanctuary. The spiritual tour package was thoughtfully arranged and deeply moving.",author:"Savitri Devi",location:"Varanasi, India",stars:5},
-  {text:"Corporate retreat that became a team-building milestone. The banquet hall setup was world-class, the food excellent, views of Sangam unforgettable.",author:"Vikram Sinha",location:"Noida, India",stars:5},
-  {text:"I've stayed at luxury hotels across India, but Alarkpuri's unique blend of spirituality and modern luxury is truly one of a kind. Returning soon.",author:"Ananya Chatterjee",location:"Kolkata, India",stars:5},
+  {txt:"The most peaceful escape near the Sangam. The cottage was breathtaking, service impeccable. We will return for Kumbh without a second thought.",au:"Priya & Rohit Sharma",lo:"Delhi, India",st:5},
+  {txt:"For our anniversary, Alarkpuri was sheer perfection. The luxury suite felt like a dream — truly magical. Fine dining surpassed every expectation.",au:"Meera Krishnamurthy",lo:"Bengaluru, India",st:5},
+  {txt:"We hosted our son's wedding reception here. Every detail was handled with such grace and precision. Extraordinary in every single sense.",au:"Suresh & Kamla Agarwal",lo:"Lucknow, India",st:5},
+  {txt:"Came for a spiritual retreat and left completely transformed. Proximity to Sangam made morning dips effortless. The staff are incredibly warm.",au:"Dr. Arjun Pillai",lo:"Mumbai, India",st:5},
+  {txt:"The Heritage Villa exceeded all expectations. Our family of six had immense space and comfort. The Awadhi architecture is simply stunning.",au:"Rajesh Malhotra",lo:"Kanpur, India",st:5},
+  {txt:"As a solo pilgrim in Prayagraj, this resort was a true sanctuary. The spiritual tour package was thoughtfully arranged and deeply moving.",au:"Savitri Devi",lo:"Varanasi, India",st:5},
+  {txt:"Corporate retreat that became a team milestone. Banquet setup was world-class, food excellent, and the views of Sangam at dawn were unforgettable.",au:"Vikram Sinha",lo:"Noida, India",st:5},
+  {txt:"I've stayed at luxury hotels across India, but Alarkpuri's unique blend of spirituality and modern luxury is truly one of a kind. Returning soon.",au:"Ananya Chatterjee",lo:"Kolkata, India",st:5},
 ];
 
-const particles = Array.from({length:20},(_,i)=>({
-  id:i, left:`${4+(i*4.8)%92}%`,
-  duration:`${7+(i*1.5)%11}s`, delay:`${(i*0.7)%9}s`,
-  size: i%4===0?3:2, crimson: i%5===0,
-}));
+const navSecs = ['home','about','rooms','banquet','restaurant','attractions','booking'];
+const SLIDE_IV = 4200;
+const TEST_IV  = 5000;
+const pts = Array.from({length:20},(_,i)=>({id:i,l:`${4+(i*4.8)%92}%`,dur:`${7+(i*1.5)%11}s`,del:`${(i*.7)%9}s`,sz:i%4===0?3:2,g:i%5===0}));
 
-const SLIDE_INTERVAL = 4200;
-const TEST_INTERVAL = 3800;
+/* ── SVG Icons ── */
+const Ic = {
+  Up:   ()=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>,
+  L:    ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>,
+  R:    ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  Ps:   ()=><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+  Pl:   ()=><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+  Pin:  ()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Ph:   ()=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.29 6.29l.95-.96a2 2 0 0 1 2.1-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.02z"/></svg>,
+  Ml:   ()=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  Cl:   ()=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  WA:   ()=><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>,
+  FB:   ()=><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>,
+  IG:   ()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>,
+  YT:   ()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>,
+  Aw:   ()=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>,
+};
 
 function useReveal() {
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }),
-      {threshold:0.06}
-    );
-    document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale,.section-divider')
-      .forEach(el => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
+  useEffect(()=>{
+    const obs = new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.06});
+    document.querySelectorAll('.rv,.rl,.rr,.s-div').forEach(el=>obs.observe(el));
+    return()=>obs.disconnect();
+  },[]);
 }
-
-function SecScroll({targetId}) {
-  return (
-    <div className="sec-scroll" onClick={() => document.getElementById(targetId)?.scrollIntoView({behavior:'smooth'})}>
-      <span className="sec-scroll-label">Continue</span>
-      <div className="sec-scroll-track"><div className="sec-scroll-fill"/></div>
+function SecScroll({to}){
+  return(
+    <div className="sec-sc" onClick={()=>document.getElementById(to)?.scrollIntoView({behavior:'smooth'})}>
+      <span className="sec-sc-l">Continue</span>
+      <div className="sec-sc-t"><div className="sec-sc-f"/></div>
     </div>
   );
 }
 
-export default function AlarkpuriSangamResort() {
-  const [scrolled,   setScrolled]   = useState(false);
-  const [menuOpen,   setMenuOpen]   = useState(false);
-  const [activeMenu, setActiveMenu] = useState('veg');
-  const [toast,      setToast]      = useState(false);
-  const [showTop,    setShowTop]    = useState(false);
-  const [slideIndex, setSlideIndex] = useState(0);
-  const [paused,     setPaused]     = useState(false);
-  const [progress,   setProgress]   = useState(0);
-  const [testIndex,  setTestIndex]  = useState(0);
-  const [form, setForm] = useState({name:'',email:'',phone:'',checkin:'',checkout:'',guests:'2',roomType:'premium',message:''});
+export default function AlarkpuriResort(){
+  const [scrolled,setScrolled] = useState(false);
+  const [menuOpen,setMenuOpen] = useState(false);
+  const [activeMenu,setActiveMenu] = useState('veg');
+  const [showTop,setShowTop] = useState(false);
+  const [slideIdx,setSlideIdx] = useState(0);
+  const [progress,setProgress] = useState(0);
+  const [paused,setPaused] = useState(false);
+  const [testIdx,setTestIdx] = useState(0);
+  const [nlEmail,setNlEmail] = useState('');
+  const [toasts,setToasts] = useState([]);
+  const [form,setForm] = useState({name:'',email:'',phone:'',checkin:'',checkout:'',guests:'2',roomType:'premium',message:''});
 
-  const timerRef    = useRef(null);
-  const rafRef      = useRef(null);
-  const startRef    = useRef(null);
-  const testTimerRef = useRef(null);
+  const timerRef=useRef(null), rafRef=useRef(null), startRef=useRef(null), testTimerRef=useRef(null);
+  const toastIdRef = useRef(0);
   useReveal();
 
-  // Rooms slider
-  const [visibleCount, setVisibleCount] = useState(3);
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      setVisibleCount(w <= 768 ? 1 : w <= 1024 ? 2 : 3);
-    };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-  const maxIndex = rooms.length - visibleCount;
-  const cardWidth = 100 / visibleCount;
+  const [visCount,setVisCount] = useState(3);
+  useEffect(()=>{
+    const upd=()=>setVisCount(window.innerWidth<=768?1:window.innerWidth<=1024?2:3);
+    upd(); window.addEventListener('resize',upd); return()=>window.removeEventListener('resize',upd);
+  },[]);
+  const maxIdx = rooms.length - visCount;
+  const cardW = 100/visCount;
 
-  const startProgress = () => {
-    setProgress(0);
-    startRef.current = performance.now();
-    const tick = (now) => {
-      const pct = Math.min(((now - startRef.current) / SLIDE_INTERVAL) * 100, 100);
-      setProgress(pct);
-      if (pct < 100) rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
+  /* Auto-slide rooms */
+  const startProg = ()=>{
+    setProgress(0); startRef.current=performance.now();
+    const tick=now=>{const p=Math.min(((now-startRef.current)/SLIDE_IV)*100,100);setProgress(p);if(p<100)rafRef.current=requestAnimationFrame(tick);};
+    rafRef.current=requestAnimationFrame(tick);
+  };
+  const startTimer=()=>{clearTimeout(timerRef.current);cancelAnimationFrame(rafRef.current);startProg();timerRef.current=setTimeout(()=>setSlideIdx(i=>i>=maxIdx?0:i+1),SLIDE_IV);};
+  useEffect(()=>{if(!paused)startTimer();return()=>{clearTimeout(timerRef.current);cancelAnimationFrame(rafRef.current);};},[paused,slideIdx,maxIdx]);
+
+  /* Auto-slide testimonials */
+  useEffect(()=>{
+    testTimerRef.current=setInterval(()=>setTestIdx(i=>i>=testimonials.length-1?0:i+1),TEST_IV);
+    return()=>clearInterval(testTimerRef.current);
+  },[]);
+
+  useEffect(()=>{
+    const fn=()=>{setScrolled(window.scrollY>60);setShowTop(window.scrollY>400);};
+    window.addEventListener('scroll',fn); return()=>window.removeEventListener('scroll',fn);
+  },[]);
+
+  const scrollTo = id=>{document.getElementById(id)?.scrollIntoView({behavior:'smooth'});setMenuOpen(false);};
+
+  /* Toast helper */
+  const showToast = (msg, type='info') => {
+    const id = ++toastIdRef.current;
+    setToasts(t=>[...t,{id,msg,type,show:false}]);
+    setTimeout(()=>setToasts(t=>t.map(x=>x.id===id?{...x,show:true}:x)),50);
+    setTimeout(()=>setToasts(t=>t.map(x=>x.id===id?{...x,show:false}:x)),3800);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4300);
   };
 
-  const startTimer = () => {
-    clearTimeout(timerRef.current);
-    cancelAnimationFrame(rafRef.current);
-    startProgress();
-    timerRef.current = setTimeout(() => {
-      setSlideIndex(i => i >= maxIndex ? 0 : i + 1);
-    }, SLIDE_INTERVAL);
-  };
-
-  useEffect(() => {
-    if (!paused) startTimer();
-    return () => { clearTimeout(timerRef.current); cancelAnimationFrame(rafRef.current); };
-  }, [paused, slideIndex, maxIndex]);
-
-  // Testimonials auto-slider
-  const testVisibleCount = typeof window !== 'undefined' ? (window.innerWidth <= 768 ? 1 : 2) : 2;
-  const maxTestIndex = testimonials.length - testVisibleCount;
-  
-  useEffect(() => {
-    testTimerRef.current = setInterval(() => {
-      setTestIndex(i => i >= maxTestIndex ? 0 : i + 1);
-    }, TEST_INTERVAL);
-    return () => clearInterval(testTimerRef.current);
-  }, [maxTestIndex]);
-
-  useEffect(() => {
-    const fn = () => { setScrolled(window.scrollY>60); setShowTop(window.scrollY>400); };
-    window.addEventListener('scroll', fn);
-    return () => window.removeEventListener('scroll', fn);
-  }, []);
-
-  const scrollTo = (id) => { document.getElementById(id)?.scrollIntoView({behavior:'smooth'}); setMenuOpen(false); };
-  const handleSubmit = (e) => {
-    e.preventDefault(); setToast(true); setTimeout(()=>setToast(false),4000);
+  const handleSubmit = e=>{
+    e.preventDefault();
+    showToast('Reservation request sent! We will contact you within 2 hours.','success');
     setForm({name:'',email:'',phone:'',checkin:'',checkout:'',guests:'2',roomType:'premium',message:''});
   };
 
-  const navSections = ['home','about','rooms','banquet','restaurant','attractions','booking'];
+  const handleNL = e=>{
+    e.preventDefault();
+    if(!nlEmail){showToast('Please enter your email address.','warn');return;}
+    showToast('Subscribed successfully! Welcome to our newsletter.','success');
+    setNlEmail('');
+  };
 
-  // Create doubled attractions array for infinite loop
-  const attractionsDoubled = [...attractions, ...attractions];
+  const handleSocial = (platform)=> showToast(`Opening ${platform}...`,'info');
+  const handleWA = ()=> showToast('Opening WhatsApp chat with Alarkpuri Sangam...','success');
+  const handleRoomBook = (roomName)=> { scrollTo('booking'); setTimeout(()=>showToast(`Room selected: ${roomName}. Please fill in your details below.`,'info'),600); };
+  const handleEnquire = ()=>{ scrollTo('booking'); setTimeout(()=>showToast('Banquet enquiry — please fill in your details and we will reach out.','info'),600); };
 
-  return (
+  const testPrev = ()=>{ clearInterval(testTimerRef.current); setTestIdx(i=>Math.max(0,i-1)); };
+  const testNext = ()=>{ clearInterval(testTimerRef.current); setTestIdx(i=>Math.min(testimonials.length-1,i+1)); };
+
+  const attractDbl = [...attractions,...attractions];
+
+  return(
     <>
-      <style>{style}</style>
+      <style>{css}</style>
 
-      {/* NAV */}
-      <nav className={`navbar ${scrolled?'scrolled':''}`}>
-        <div className="nav-logo" onClick={()=>scrollTo('home')}>
-          <div className="nav-logo-title">ALARKPURI SANGAM</div>
-          <div className="nav-logo-sub">Resort & Restaurant</div>
-        </div>
-        <ul className="nav-links">
-          {navSections.map(s => (
-            <li key={s}><a href={`#${s}`} onClick={e=>{e.preventDefault();scrollTo(s);}}>{s==='home'?'Home':s.charAt(0).toUpperCase()+s.slice(1)}</a></li>
-          ))}
-          <li><a href="#booking" className="nav-cta" onClick={e=>{e.preventDefault();scrollTo('booking');}}>Book Stay</a></li>
-        </ul>
-        <button className={`hamburger ${menuOpen?'open':''}`} onClick={()=>setMenuOpen(m=>!m)} aria-label="Menu">
-          <span/><span/><span/>
-        </button>
-      </nav>
-
-      <div className={`mobile-menu ${menuOpen?'open':''}`}>
-        {navSections.map(s => (
-          <a key={s} href={`#${s}`} onClick={e=>{e.preventDefault();scrollTo(s);}}>{s.charAt(0).toUpperCase()+s.slice(1)}</a>
+      {/* ── TOASTS ── */}
+      <div className="toast-wrap">
+        {toasts.map(t=>(
+          <div key={t.id} className={`toast ${t.type} ${t.show?'show':''}`}>
+            <span className="toast-dot"/>
+            {t.msg}
+          </div>
         ))}
       </div>
 
-      {/* HERO */}
-      <section id="home" className="hero">
-        <div className="hero-bg"/>
-        <div className="hero-pattern"/>
-        <div className="hero-rings"><div className="hero-ring"/><div className="hero-ring"/><div className="hero-ring"/><div className="hero-ring"/></div>
-        <div className="hero-orb hero-orb-1"/><div className="hero-orb hero-orb-2"/><div className="hero-orb hero-orb-3"/><div className="hero-orb hero-orb-4"/>
-        <div className="hero-particles">
-          {particles.map(p=>(
-            <div key={p.id} className={`particle ${p.crimson?'crimson':''}`} style={{left:p.left,bottom:'-10px',animationDuration:p.duration,animationDelay:p.delay,width:p.size,height:p.size}}/>
-          ))}
+      {/* ── NAVBAR ── */}
+      <nav className={`nb ${scrolled?'sc':''}`}>
+        <div className="nb-logo" onClick={()=>scrollTo('home')}>
+          <div className="nb-logo-t">ALARKPURI SANGAM</div>
+          <div className="nb-logo-s">Resort & Restaurant</div>
         </div>
-        <div className="hero-content">
-          <div className="hero-badge"><span className="hero-badge-dot"/> Prayagraj, Uttar Pradesh <span className="hero-badge-dot"/></div>
-          <h1 className="hero-title"><em>Discover</em> Nature's</h1>
-          <span className="hero-subtitle-block">Bounty in Alarkpuri Sangam</span>
-          <p className="hero-tagline">Where spirituality meets luxury — near the sacred Triveni Sangam</p>
-          <div className="hero-actions">
-            <button className="btn-primary" onClick={()=>scrollTo('booking')}><span>Book Your Stay</span></button>
-            <button className="btn-outline" onClick={()=>scrollTo('rooms')}><span>Explore Rooms</span></button>
+        <ul className="nb-links">
+          {navSecs.map(s=>(
+            <li key={s}><a href={`#${s}`} onClick={e=>{e.preventDefault();scrollTo(s);}}>
+              {s==='home'?'Home':s[0].toUpperCase()+s.slice(1)}
+            </a></li>
+          ))}
+          <li><a href="#booking" className="nb-cta" onClick={e=>{e.preventDefault();scrollTo('booking');}}>Book Stay</a></li>
+        </ul>
+        <button className={`hbg ${menuOpen?'op':''}`} onClick={()=>setMenuOpen(m=>!m)} aria-label="Menu">
+          <span/><span/><span/>
+        </button>
+      </nav>
+      <div className={`mm ${menuOpen?'op':''}`}>
+        {navSecs.map(s=>(
+          <a key={s} href={`#${s}`} onClick={e=>{e.preventDefault();scrollTo(s);}}>
+            {s[0].toUpperCase()+s.slice(1)}
+          </a>
+        ))}
+      </div>
+
+      {/* ── HERO ── */}
+      <section id="home" className="hero">
+        <div className="h-bg"/><div className="h-pat"/>
+        <div className="h-topline"/>
+        <div className="h-rings"><div className="h-ring"/><div className="h-ring"/><div className="h-ring"/><div className="h-ring"/></div>
+        <div className="h-orb h-orb1"/><div className="h-orb h-orb2"/><div className="h-orb h-orb3"/>
+        <div className="h-parts">{pts.map(p=><div key={p.id} className={`pt ${p.g?'':'gold'}`} style={{left:p.l,bottom:'-10px',animationDuration:p.dur,animationDelay:p.del,width:p.sz,height:p.sz,background:p.g?'#3d9e6a':'#C9A84C'}}/>)}</div>
+        <div className="h-cnt">
+          <div className="h-badge"><span className="h-bdot"/> Prayagraj, Uttar Pradesh <span className="h-bdot"/></div>
+          <h1 className="h-title"><em>Discover</em> Nature's</h1>
+          <span className="h-sub">Bounty in Alarkpuri Sangam</span>
+          <p className="h-tag">Where spirituality meets luxury — near the sacred Triveni Sangam</p>
+          <div className="h-acts">
+            <button className="btn-p" onClick={()=>scrollTo('booking')}><span>Book Your Stay</span></button>
+            <button className="btn-o" onClick={()=>scrollTo('rooms')}><span>Explore Rooms</span></button>
           </div>
         </div>
-        {/* Scroll indicator: now positioned at bottom-center, below the hero-content */}
-        <div className="hero-scroll" onClick={()=>scrollTo('about')}>
-          <span className="hero-scroll-label">Scroll</span>
-          <div className="hero-scroll-line"><div className="hero-scroll-fill"/></div>
+        <div className="h-scr" onClick={()=>scrollTo('about')}>
+          <span className="h-scr-lbl">Scroll</span>
+          <div className="h-scr-line"><div className="h-scr-fill"/></div>
         </div>
       </section>
 
-      {/* ABOUT */}
-      <section id="about" className="about-section">
-        <div className="container">
-          <div className="about-grid">
-            <div className="reveal-left">
-              <div className="about-card">
-                <div className="about-ring"/>
-                <div className="about-ring2"/>
-                <div className="about-quote">"Where every sunrise is sacred"</div>
-                <p style={{color:'var(--text-light)',lineHeight:1.9,fontSize:14.5,position:'relative',zIndex:1}}>Nestled beside the confluence of three holy rivers, Alarkpuri Sangam Resort blends the reverence of Prayagraj with the indulgence of modern luxury.</p>
-                <div className="about-stat-grid">
-                  {[{num:"15+",label:"Luxury Rooms"},{num:"500+",label:"Events Hosted"},{num:"10K+",label:"Happy Guests"},{num:"0.5km",label:"From Sangam"}].map((s,i)=>(
-                    <div key={s.label} className="stat-item reveal" style={{transitionDelay:`${0.1+i*0.12}s`}}>
-                      <span className="stat-num">{s.num}</span><span className="stat-label">{s.label}</span>
+      {/* ── ABOUT ── */}
+      <section id="about" className="abt-sec">
+        <div className="ctr">
+          <div className="abt-grid">
+            <div className="rl">
+              <div className="abt-card">
+                <div className="abt-ring"/>
+                <div className="abt-q">"Where every sunrise is sacred"</div>
+                <p style={{color:'var(--text-light)',lineHeight:1.9,fontSize:14.5,position:'relative',zIndex:1}}>
+                  Nestled beside the confluence of three holy rivers, Alarkpuri Sangam Resort blends the reverence of Prayagraj with the indulgence of modern luxury.
+                </p>
+                <div className="abt-sg">
+                  {[{n:"15+",l:"Luxury Rooms"},{n:"500+",l:"Events Hosted"},{n:"10K+",l:"Happy Guests"},{n:"0.5km",l:"From Sangam"}].map((s,i)=>(
+                    <div key={s.l} className="si rv" style={{transitionDelay:`${.1+i*.12}s`}}>
+                      <span className="si-n">{s.n}</span><span className="si-l">{s.l}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="reveal-right" style={{transitionDelay:'0.15s'}}>
-              <span className="section-label">Welcome to Alarkpuri Sangam Resort</span>
-              <h2 className="section-title">Your Ultimate Luxury <em>Retreat</em> in Prayagraj</h2>
-              <div className="section-divider"/>
-              <p className="section-text">Alarkpuri Sangam Resort is one of the most serene and nature-inspired resorts near the sacred Triveni Sangam — a perfect blend of comfort, spirituality, and natural beauty.</p>
-              <ul className="feature-list">
+            <div className="rr" style={{transitionDelay:'.15s'}}>
+              <span className="s-lbl">Welcome to Alarkpuri Sangam Resort</span>
+              <h2 className="s-title">Your Ultimate Luxury <em>Retreat</em> in Prayagraj</h2>
+              <div className="s-div"/>
+              <p className="s-txt">Alarkpuri Sangam Resort is one of the most serene and nature-inspired resorts near the sacred Triveni Sangam — a perfect blend of comfort, spirituality, and natural beauty.</p>
+              <ul className="fl">
                 {["Prime location near Triveni Sangam","Luxury cottages with artisan interiors","Grand banquet hall for all events","Multi-cuisine fine dining restaurant","24×7 personalised room service","Guided spiritual & heritage tours"].map(f=>(
-                  <li key={f}><div className="feature-dot"/>{f}</li>
+                  <li key={f}><div className="fdot"/>{f}</li>
                 ))}
               </ul>
-              <button className="btn-primary" style={{marginTop:40}} onClick={()=>scrollTo('booking')}><span>Reserve Your Experience</span></button>
+              <button className="btn-p" style={{marginTop:40}} onClick={()=>scrollTo('booking')}><span>Reserve Your Experience</span></button>
             </div>
           </div>
-          <SecScroll targetId="rooms"/>
+          <SecScroll to="rooms"/>
         </div>
       </section>
 
-      {/* ROOMS AUTO SLIDER */}
-      <section id="rooms" className="rooms-section">
-        <div className="container" style={{marginBottom:52}}>
+      {/* ── ROOMS ── */}
+      <section id="rooms" className="rm-sec">
+        <div className="ctr" style={{marginBottom:52}}>
           <div style={{textAlign:'center'}}>
-            <span className="section-label reveal">Discover Our Rooms</span>
-            <h2 className="section-title reveal" style={{textAlign:'center'}}>Luxurious <em>Accommodations</em></h2>
-            <div className="section-divider reveal" style={{margin:'0 auto 0'}}/>
+            <span className="s-lbl rv">Discover Our Rooms</span>
+            <h2 className="s-title rv" style={{textAlign:'center'}}>Luxurious <em>Accommodations</em></h2>
+            <div className="s-div rv" style={{margin:'0 auto'}}/>
           </div>
         </div>
-        <div className="slider-progress-wrap">
-          <div className="slider-progress-bar" style={{width:`${progress}%`}}/>
-        </div>
-        <div className="rooms-slider-outer">
-          <div className="rooms-track" style={{transform:`translateX(-${slideIndex*cardWidth}%)`}}>
-            {rooms.map(room=>(
-              <div key={room.name} className="room-card"
-                style={{minWidth:`calc(${cardWidth}%)`}}
+        <div className="sl-pw"><div className="sl-pb" style={{width:`${progress}%`}}/></div>
+        <div className="rm-outer">
+          <div className="rm-track" style={{transform:`translateX(-${slideIdx*cardW}%)`}}>
+            {rooms.map(r=>(
+              <div key={r.name} className="rm-card" style={{minWidth:`calc(${cardW}%)`}}
                 onMouseEnter={()=>{setPaused(true);clearTimeout(timerRef.current);cancelAnimationFrame(rafRef.current);}}
                 onMouseLeave={()=>setPaused(false)}
               >
-                <div className="room-img-holder">
-                  <div className="room-img-fallback" style={{background:room.bg}}/>
-                </div>
-                <div className="room-gradient"/>
-                <div className="room-content">
-                  <div className="room-price">{room.price}</div>
-                  <div className="room-name">{room.name}</div>
-                  <div className="room-meta"><span>{room.bathrooms} Bath{room.bathrooms>1?'s':''}</span><span>Max {room.occupancy} Guests</span></div>
-                  <div className="room-desc">{room.desc}</div>
-                  <button className="room-btn" onClick={()=>scrollTo('booking')}><span>Book Now</span></button>
+                <img src={r.img} alt={r.name} loading="lazy" onError={e=>{e.target.style.display='none';}}/>
+                <div className="rm-grad"/>
+                <div className="rm-cnt">
+                  <div className="rm-price">{r.price}</div>
+                  <div className="rm-name">{r.name}</div>
+                  <div className="rm-meta"><span>{r.bathrooms} Bath{r.bathrooms>1?'s':''}</span><span>Max {r.occupancy} Guests</span></div>
+                  <div className="rm-desc">{r.desc}</div>
+                  <button className="rm-btn" onClick={()=>handleRoomBook(r.name)}><span>Book Now</span></button>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="slider-footer">
-          <div className="slider-counter"><span>{String(slideIndex+1).padStart(2,'0')}</span> / {String(rooms.length).padStart(2,'0')}</div>
-          <div className="slider-dots">
-            {Array.from({length:maxIndex+1}).map((_,i)=>(
-              <button key={i} className={`slider-dot ${slideIndex===i?'active':''}`} onClick={()=>{setSlideIndex(i);setPaused(false);}}/>
+        <div className="sl-ft">
+          <div className="sl-ctr"><span>{String(slideIdx+1).padStart(2,'0')}</span> / {String(rooms.length).padStart(2,'0')}</div>
+          <div className="sl-dots">
+            {Array.from({length:maxIdx+1}).map((_,i)=>(
+              <button key={i} className={`sl-dot ${slideIdx===i?'act':''}`} onClick={()=>{setSlideIdx(i);setPaused(false);}}/>
             ))}
           </div>
-          <button className="slider-pause-btn" onClick={()=>setPaused(p=>!p)}>{paused?<Icon.Play/>:<Icon.Pause/>}</button>
+          <button className="sl-pbtn" onClick={()=>setPaused(p=>!p)}>{paused?<Ic.Pl/>:<Ic.Ps/>}</button>
         </div>
-        <div className="container"><SecScroll targetId="banquet"/></div>
+        <div className="ctr"><SecScroll to="banquet"/></div>
       </section>
 
-      {/* AMENITIES - 4x2 equal grid */}
-      <section className="amenities-section">
-        <div className="container">
+      {/* ── AMENITIES ── */}
+      <section className="am-sec">
+        <div className="ctr">
           <div style={{textAlign:'center',marginBottom:60}}>
-            <span className="section-label reveal">What We Offer</span>
-            <h2 className="section-title reveal" style={{textAlign:'center'}}>Resort <em>Amenities</em></h2>
-            <div className="section-divider reveal" style={{margin:'0 auto'}}/>
+            <span className="s-lbl rv">What We Offer</span>
+            <h2 className="s-title rv" style={{textAlign:'center'}}>Resort <em>Amenities</em></h2>
+            <div className="s-div rv" style={{margin:'0 auto'}}/>
           </div>
-          <div className="amenities-grid">
+          <div className="am-grid">
             {amenities.map((a,i)=>(
-              <div key={a.name} className="amenity-card reveal" style={{transitionDelay:`${i*0.08}s`}}>
-                <div className="amenity-icon"><a.Icon/></div>
-                <div className="amenity-name">{a.name}</div>
-                <div className="amenity-desc">{a.desc}</div>
+              <div key={a.nm} className="am-card rv" style={{transitionDelay:`${i*.08}s`}}>
+                <div className="am-ic">{a.ic}</div>
+                <div className="am-nm">{a.nm}</div>
+                <div className="am-ds">{a.ds}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* BANQUET */}
-      <section id="banquet" className="banquet-section">
-        <div className="banquet-bg-orb"/>
-        <div className="container">
-          <div className="banquet-grid">
-            <div className="reveal-left">
-              <span className="section-label">Events & Celebrations</span>
-              <h2 className="section-title">Best Banquet Hall in <em>Prayagraj</em></h2>
-              <div className="section-divider"/>
-              <p className="section-text">Modern facilities with a peaceful environment near the holy Triveni Sangam. Designed for weddings, receptions, birthday parties, corporate meetings, and family gatherings.</p>
-              <div className="banquet-features">
+      {/* ── BANQUET ── */}
+      <section id="banquet" className="bq-sec">
+        <div className="ctr">
+          <div className="bq-grid">
+            <div className="rl">
+              <span className="s-lbl">Events & Celebrations</span>
+              <h2 className="s-title">Best Banquet Hall in <em>Prayagraj</em></h2>
+              <div className="s-div"/>
+              <p className="s-txt">Modern facilities with a peaceful environment near the holy Triveni Sangam. Designed for weddings, receptions, birthday parties, corporate meetings, and family gatherings.</p>
+              <div className="bq-fts">
                 {["Weddings & Receptions","Corporate Events","Birthday Celebrations","Cultural Gatherings"].map(f=>(
-                  <div key={f} className="banquet-feature"><div className="banquet-feature-title">{f}</div></div>
+                  <div key={f} className="bq-ft"><div className="bq-ft-t">{f}</div></div>
                 ))}
               </div>
-              <button className="btn-primary" style={{marginTop:40}} onClick={()=>scrollTo('booking')}><span>Enquire for Events</span></button>
+              <div className="bq-cb">
+                <div><span className="bq-cn">500+</span></div>
+                <div className="bq-cl">Events<br/>Hosted</div>
+                <div style={{width:1,height:40,background:'rgba(201,168,76,.2)',margin:'0 6px'}}/>
+                <div><span className="bq-cn">300</span></div>
+                <div className="bq-cl">Guest<br/>Capacity</div>
+              </div>
+              <button className="btn-p" style={{marginTop:36}} onClick={handleEnquire}><span>Enquire for Events</span></button>
             </div>
-            <div className="reveal-right" style={{transitionDelay:'0.15s'}}>
-              <div className="banquet-visual">
-                <div className="bv-main">
-                  <div className="bv-main-inner"/>
-                  <svg width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.15)" strokeWidth="0.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <div className="rr" style={{transitionDelay:'.15s'}}>
+              <div className="bq-im"><img src={IMG.banquet1} alt="Banquet Hall" loading="lazy"/></div>
+              <div className="bq-ig">
+                <div className="bq-is"><img src={IMG.banquet2} alt="Wedding Setup" loading="lazy"/></div>
+                <div className="bq-is"><img src={IMG.banquet3} alt="Event Decor" loading="lazy"/></div>
+                <div className="bq-is"><img src={IMG.banquet4} alt="Corporate Event" loading="lazy"/></div>
+                <div className="bq-is" style={{background:'var(--g5)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,cursor:'pointer'}} onClick={handleEnquire}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,.5)" strokeWidth="1.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span style={{fontFamily:"'Cinzel',serif",fontSize:8,color:'var(--text-mid)',letterSpacing:2,textAlign:'center',lineHeight:1.6}}>BOOK YOUR<br/>EVENT</span>
                 </div>
-                <div className="bv-accent">
-                  <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="rgba(7,9,15,0.4)" strokeWidth="1.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                </div>
-                <div className="bv-badge"><strong>500+</strong>Events<br/>Hosted</div>
               </div>
             </div>
           </div>
-          <SecScroll targetId="restaurant"/>
+          <SecScroll to="restaurant"/>
         </div>
       </section>
 
-      {/* RESTAURANT */}
-      <section id="restaurant" className="restaurant-section">
-        <div className="container">
-          <div className="restaurant-grid">
-            <div className="reveal-left">
-              <div className="restaurant-visual">
-                <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.12)" strokeWidth="0.7" strokeLinecap="round" style={{position:'relative',zIndex:1}}>
-                  <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
-                </svg>
+      {/* ── RESTAURANT ── */}
+      <section id="restaurant" className="rs-sec">
+        <div className="ctr">
+          <div style={{textAlign:'center',marginBottom:64}}>
+            <span className="s-lbl rv">Culinary Excellence</span>
+            <h2 className="s-title rv" style={{textAlign:'center'}}>Restaurant in <em>Prayagraj</em></h2>
+            <div className="s-div rv" style={{margin:'0 auto'}}/>
+            <p className="s-txt rv" style={{textAlign:'center',margin:'24px auto 0',maxWidth:600}}>Fine dining where taste, tradition, and elegance converge. Premium ambiance, delicious food, warm hospitality — in a peaceful nature-inspired setting.</p>
+          </div>
+          <div className="rs-grid">
+            <div className="rl">
+              <div className="rs-iw">
+                <div className="rs-im"><img src={IMG.restInterior} alt="Restaurant Interior" loading="lazy"/></div>
+                <div className="rs-fg">
+                  <div className="rs-fi"><img src={IMG.foodBiryani} alt="Biryani" loading="lazy"/></div>
+                  <div className="rs-fi"><img src={IMG.foodThali} alt="Thali" loading="lazy"/></div>
+                  <div className="rs-fi"><img src={IMG.foodDessert} alt="Dessert" loading="lazy"/></div>
+                </div>
               </div>
             </div>
-            <div className="reveal-right" style={{transitionDelay:'0.15s'}}>
-              <span className="section-label">Culinary Excellence</span>
-              <h2 className="section-title">Restaurant in <em>Prayagraj</em></h2>
-              <div className="section-divider"/>
-              <p className="section-text" style={{marginBottom:36}}>Fine dining where taste, tradition, and elegance converge. Premium ambiance, delicious food, warm hospitality — in a peaceful nature-inspired setting.</p>
-              <div className="menu-tabs">
+            <div className="rr" style={{transitionDelay:'.15s'}}>
+              <div className="m-tabs">
                 {['veg','nonveg','beverages'].map(tab=>(
-                  <button key={tab} className={`menu-tab ${activeMenu===tab?'active':''}`} onClick={()=>setActiveMenu(tab)}>
+                  <button key={tab} className={`m-tab ${activeMenu===tab?'act':''}`} onClick={()=>setActiveMenu(tab)}>
                     {tab==='veg'?'Vegetarian':tab==='nonveg'?'Non-Veg':'Beverages'}
                   </button>
                 ))}
               </div>
-              <div className="menu-items">
+              <div className="m-items">
                 {menuItems[activeMenu].map((item,i)=>(
-                  <div key={item.name} className="menu-item reveal" style={{transitionDelay:`${i*0.07}s`}}>
-                    <div><div className="menu-item-name">{item.name}</div><div className="menu-item-desc">{item.desc}</div></div>
-                    <div className="menu-item-price">{item.price}</div>
+                  <div key={item.name} className="m-item">
+                    <div>
+                      <div className="m-in">{item.name}</div>
+                      <div className="m-id">{item.desc}</div>
+                    </div>
+                    <div className="m-ip">{item.price}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-          <SecScroll targetId="attractions"/>
+          <SecScroll to="attractions"/>
         </div>
       </section>
 
-      {/* GALLERY */}
-      <section className="gallery-section">
-        <div className="container" style={{marginBottom:52}}>
+      {/* ── GALLERY ── */}
+      <section className="gl-sec">
+        <div className="ctr" style={{marginBottom:52}}>
           <div style={{textAlign:'center'}}>
-            <span className="section-label reveal">Captured Moments</span>
-            <h2 className="section-title reveal" style={{textAlign:'center'}}>Resort <em>Gallery</em></h2>
-            <div className="section-divider reveal" style={{margin:'0 auto'}}/>
+            <span className="s-lbl rv">Captured Moments</span>
+            <h2 className="s-title rv" style={{textAlign:'center'}}>Resort <em>Gallery</em></h2>
+            <div className="s-div rv" style={{margin:'0 auto'}}/>
           </div>
         </div>
-        <div className="container">
-          <div className="gallery-grid reveal">
+        <div className="ctr">
+          <div className="gl-grid rv">
             {[
-              {label:"The Resort",   bg:"linear-gradient(165deg,#181e3a,#07090f)"},
-              {label:"Premium Suite",bg:"linear-gradient(165deg,#2a1530,#07090f)"},
-              {label:"Sunrise View", bg:"linear-gradient(165deg,#3a1508,#07090f)"},
-              {label:"Banquet Hall", bg:"linear-gradient(165deg,#1a2a08,#07090f)"},
-              {label:"Restaurant",   bg:"linear-gradient(165deg,#0d2030,#07090f)"},
+              {l:"The Resort",  i:IMG.galleryResort},
+              {l:"Premium Suite",i:IMG.gallerySuite},
+              {l:"Sunrise View",i:IMG.gallerySunrise},
+              {l:"Banquet Hall",i:IMG.galleryBanquet},
+              {l:"Restaurant",  i:IMG.galleryDining},
             ].map((g,i)=>(
-              <div key={i} className="gallery-item">
-                <div className="gallery-bg" style={{width:'100%',height:'100%',background:g.bg}}/>
-                <div className="gallery-overlay">
+              <div key={i} className="gl-item">
+                <img src={g.i} alt={g.l} loading="lazy"/>
+                <div className="gl-ov">
                   <div style={{textAlign:'center'}}>
-                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.4" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-                    <div className="gallery-label">{g.label}</div>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.4" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    <div className="gl-lbl">{g.l}</div>
                   </div>
                 </div>
               </div>
@@ -1178,96 +914,91 @@ export default function AlarkpuriSangamResort() {
         </div>
       </section>
 
-      {/* ATTRACTIONS - infinite loop auto-scroll, 4 visible at a time */}
-      <section id="attractions" className="attractions-section">
-        <div className="container attractions-header">
+      {/* ── ATTRACTIONS INFINITE SCROLL ── */}
+      <section id="attractions" className="at-sec">
+        <div className="ctr" style={{marginBottom:64}}>
           <div style={{textAlign:'center'}}>
-            <span className="section-label reveal">Explore Prayagraj</span>
-            <h2 className="section-title reveal" style={{textAlign:'center'}}>Nearby <em>Attractions</em></h2>
-            <div className="section-divider reveal" style={{margin:'0 auto 0'}}/>
+            <span className="s-lbl rv">Explore Prayagraj</span>
+            <h2 className="s-title rv" style={{textAlign:'center'}}>Nearby <em>Attractions</em></h2>
+            <div className="s-div rv" style={{margin:'0 auto'}}/>
           </div>
         </div>
-        <div className="attractions-infinite-outer" style={{padding:'0 0 20px'}}>
-          <div className="attractions-track-wrap">
-            {attractionsDoubled.map((a,i)=>(
-              <div key={`${a.name}-${i}`} className="attraction-card">
-                <div className="attraction-icon">
+        <div className="at-inf" style={{paddingBottom:20}}>
+          <div className="at-tw">
+            {attractDbl.map((a,i)=>(
+              <div key={`${a.nm}-${i}`} className="at-card">
+                <div className="at-ic">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 </div>
-                <div className="attraction-name">{a.name}</div>
-                <div className="attraction-dist">{a.dist} away</div>
-                <div className="attraction-desc">{a.desc}</div>
+                <div className="at-nm">{a.nm}</div>
+                <div className="at-dt">{a.dt} away</div>
+                <div className="at-ds">{a.ds}</div>
               </div>
             ))}
           </div>
         </div>
-        <div className="container"><SecScroll targetId="booking"/></div>
+        <div className="ctr"><SecScroll to="booking"/></div>
       </section>
 
-      {/* TESTIMONIALS - auto slider */}
-      <section className="testimonials-section">
-        <div className="container" style={{marginBottom:52}}>
+      {/* ── TESTIMONIALS ── */}
+      <section className="ts-sec">
+        <div className="ctr" style={{marginBottom:52}}>
           <div style={{textAlign:'center'}}>
-            <span className="section-label reveal">Guest Stories</span>
-            <h2 className="section-title reveal" style={{textAlign:'center'}}>What Our Guests <em>Say</em></h2>
-            <div className="section-divider reveal" style={{margin:'0 auto'}}/>
+            <span className="s-lbl rv">Guest Stories</span>
+            <h2 className="s-title rv" style={{textAlign:'center'}}>What Our Guests <em>Say</em></h2>
+            <div className="s-div rv" style={{margin:'0 auto'}}/>
           </div>
         </div>
-        <div className="container">
-          <div className="testimonials-slider-outer">
-            <div className="testimonials-track" style={{transform:`translateX(-${testIndex * (100/(typeof window !== 'undefined' && window.innerWidth <= 768 ? 1 : 2))}%)`}}>
+        <div className="ctr">
+          <div className="ts-outer">
+            <div className="ts-track" style={{transform:`translateX(-${testIdx*100}%)`}}>
               {testimonials.map((t,i)=>(
-                <div key={i} className="testimonial-card"
-                  style={{minWidth: typeof window !== 'undefined' && window.innerWidth <= 768 ? '100%' : 'calc(50% - 10px)'}}>
-                  <span className="testimonial-quote">"</span>
-                  <div className="stars">
-                    {Array.from({length:t.stars}).map((_,si)=>(
-                      <span key={si} className="star-filled">★</span>
-                    ))}
-                  </div>
-                  <p className="testimonial-text">{t.text}</p>
-                  <div className="testimonial-author">{t.author}</div>
-                  <div className="testimonial-location">{t.location}</div>
+                <div key={i} className="ts-card">
+                  <span className="ts-q">"</span>
+                  <div className="ts-stars">{"★".repeat(t.st)}</div>
+                  <p className="ts-txt">{t.txt}</p>
+                  <div className="ts-au">{t.au}</div>
+                  <div className="ts-lo">{t.lo}</div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="testimonials-footer">
-            <button className="testimonials-nav" onClick={()=>setTestIndex(i=>Math.max(0,i-1))}><Icon.ChevronLeft/></button>
-            {Array.from({length:maxTestIndex+1}).map((_,i)=>(
-              <button key={i} className={`testimonials-dot ${testIndex===i?'active':''}`} onClick={()=>setTestIndex(i)}/>
+          <div className="ts-foot">
+            <button className="ts-nav" onClick={testPrev}><Ic.L/></button>
+            {testimonials.map((_,i)=>(
+              <button key={i} className={`ts-dot ${testIdx===i?'act':''}`} onClick={()=>{clearInterval(testTimerRef.current);setTestIdx(i);}}/>
             ))}
-            <button className="testimonials-nav" onClick={()=>setTestIndex(i=>Math.min(maxTestIndex,i+1))}><Icon.ChevronRight/></button>
+            <button className="ts-nav" onClick={testNext}><Ic.R/></button>
           </div>
         </div>
       </section>
 
-      {/* BOOKING */}
-      <section id="booking" className="booking-section">
-        <div className="container">
+      {/* ── BOOKING ── */}
+      <section id="booking" className="bk-sec">
+        <div className="ctr">
           <div style={{textAlign:'center',marginBottom:68}}>
-            <span className="section-label reveal">Reserve Your Stay</span>
-            <h2 className="section-title reveal" style={{textAlign:'center'}}>Book Your <em>Experience</em></h2>
-            <div className="section-divider reveal" style={{margin:'0 auto'}}/>
+            <span className="s-lbl rv">Reserve Your Stay</span>
+            <h2 className="s-title rv" style={{textAlign:'center'}}>Book Your <em>Experience</em></h2>
+            <div className="s-div rv" style={{margin:'0 auto'}}/>
           </div>
-          <div className="booking-grid">
-            <div className="reveal-left">
-              <div className="booking-form">
+          <div className="bk-grid">
+            <div className="rl">
+              <div className="bk-form">
                 <h3 style={{fontFamily:"'Cinzel',serif",fontSize:16,color:'var(--gold)',marginBottom:40,letterSpacing:3.5}}>RESERVATION ENQUIRY</h3>
                 <form onSubmit={handleSubmit}>
-                  <div className="form-row">
-                    <div className="form-group"><label className="form-label">Full Name</label><input className="form-input" type="text" placeholder="Your name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/></div>
-                    <div className="form-group"><label className="form-label">Phone Number</label><input className="form-input" type="tel" placeholder="+91 XXXXX XXXXX" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} required/></div>
+                  <div className="f-row">
+                    <div className="f-grp"><label className="f-lbl">Full Name</label><input className="f-in" type="text" placeholder="Your name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/></div>
+                    <div className="f-grp"><label className="f-lbl">Phone Number</label><input className="f-in" type="tel" placeholder="+91 XXXXX XXXXX" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} required/></div>
                   </div>
-                  <div className="form-group"><label className="form-label">Email Address</label><input className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required/></div>
-                  <div className="form-row">
-                    <div className="form-group"><label className="form-label">Check-In</label><input className="form-input" type="date" value={form.checkin} onChange={e=>setForm({...form,checkin:e.target.value})} required/></div>
-                    <div className="form-group"><label className="form-label">Check-Out</label><input className="form-input" type="date" value={form.checkout} onChange={e=>setForm({...form,checkout:e.target.value})} required/></div>
+                  <div className="f-grp"><label className="f-lbl">Email Address</label><input className="f-in" type="email" placeholder="your@email.com" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required/></div>
+                  <div className="f-row">
+                    <div className="f-grp"><label className="f-lbl">Check-In</label><input className="f-in" type="date" value={form.checkin} onChange={e=>setForm({...form,checkin:e.target.value})} required/></div>
+                    <div className="f-grp"><label className="f-lbl">Check-Out</label><input className="f-in" type="date" value={form.checkout} onChange={e=>setForm({...form,checkout:e.target.value})} required/></div>
                   </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Room Type</label>
-                      <select className="form-select" value={form.roomType} onChange={e=>setForm({...form,roomType:e.target.value})}>
+                  <div className="f-row">
+                    <div className="f-grp">
+                      <label className="f-lbl">Room Type</label>
+                      <select className="f-sel" value={form.roomType} onChange={e=>setForm({...form,roomType:e.target.value})}>
                         <option value="premium">Premium Suite — ₹10,500</option>
                         <option value="luxury">Luxury Suite — ₹11,500</option>
                         <option value="cottage">Nature Cottage — ₹8,500</option>
@@ -1278,138 +1009,130 @@ export default function AlarkpuriSangamResort() {
                         <option value="garden">Garden Suite — ₹9,800</option>
                       </select>
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Guests</label>
-                      <select className="form-select" value={form.guests} onChange={e=>setForm({...form,guests:e.target.value})}>
+                    <div className="f-grp">
+                      <label className="f-lbl">Guests</label>
+                      <select className="f-sel" value={form.guests} onChange={e=>setForm({...form,guests:e.target.value})}>
                         {[1,2,3,4,5,6,7,8].map(n=><option key={n} value={n}>{n} {n===1?'Guest':'Guests'}</option>)}
                       </select>
                     </div>
                   </div>
-                  <div className="form-group"><label className="form-label">Special Requests</label><textarea className="form-input" rows={3} placeholder="Any special requirements..." value={form.message} onChange={e=>setForm({...form,message:e.target.value})} style={{resize:'vertical',minHeight:80}}/></div>
-                  <button type="submit" className="form-submit">Send Reservation Request</button>
+                  <div className="f-grp"><label className="f-lbl">Special Requests</label><textarea className="f-in" rows={3} placeholder="Any special requirements..." value={form.message} onChange={e=>setForm({...form,message:e.target.value})} style={{resize:'vertical',minHeight:80}}/></div>
+                  <button type="submit" className="f-sub">Send Reservation Request</button>
                 </form>
               </div>
             </div>
-            <div className="reveal-right contact-info" style={{transitionDelay:'0.18s'}}>
-              <span className="section-label">Get In Touch</span>
-              <h3 className="section-title" style={{fontSize:42}}>Contact <em>Us</em></h3>
-              <div className="section-divider"/>
+            <div className="rr ci" style={{transitionDelay:'.18s'}}>
+              <span className="s-lbl">Get In Touch</span>
+              <h3 className="s-title" style={{fontSize:42}}>Contact <em>Us</em></h3>
+              <div className="s-div"/>
               {[
-                {I:Icon.MapPin,title:"Address",      detail:"Arazi No-84, Arail Kachhar, Naini\nPrayagraj - 211008, Uttar Pradesh"},
-                {I:Icon.Phone, title:"Phone",        detail:"+91 8737906519"},
-                {I:Icon.Mail,  title:"Email",        detail:"alarkpurisangam1@gmail.com"},
-                {I:Icon.Clock, title:"Check-in / Check-out",detail:"Check-in: 2:00 PM\nCheck-out: 11:00 AM"},
+                {I:Ic.Pin,title:"Address",    det:"Arazi No-84, Arail Kachhar, Naini\nPrayagraj - 211008, Uttar Pradesh"},
+                {I:Ic.Ph, title:"Phone",      det:"+91 8737906519"},
+                {I:Ic.Ml, title:"Email",      det:"alarkpurisangam1@gmail.com"},
+                {I:Ic.Cl, title:"Check-in / Check-out",det:"Check-in: 2:00 PM\nCheck-out: 11:00 AM"},
               ].map(c=>(
-                <div key={c.title} className="contact-item">
-                  <div className="contact-icon"><c.I/></div>
-                  <div><div className="contact-title">{c.title}</div><div className="contact-detail" style={{whiteSpace:'pre-line'}}>{c.detail}</div></div>
+                <div key={c.title} className="ci-item">
+                  <div className="ci-ic"><c.I/></div>
+                  <div>
+                    <div className="ci-title">{c.title}</div>
+                    <div className="ci-det" style={{whiteSpace:'pre-line'}}>{c.det}</div>
+                  </div>
                 </div>
               ))}
               <p style={{color:'var(--text-mid)',fontSize:12.5,marginBottom:16}}>Connect with us:</p>
-              <div className="footer-social">
-                <a href="#" className="social-btn"><Icon.FB/></a>
-                <a href="https://www.instagram.com/alarkpurisangam/" className="social-btn" target="_blank" rel="noopener noreferrer"><Icon.IG/></a>
-                <a href="#" className="social-btn"><Icon.YT/></a>
-                <a href="https://wa.me/918737906519" className="social-btn" target="_blank" rel="noopener noreferrer"><Icon.WhatsApp/></a>
+              <div className="ft-soc">
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={()=>handleSocial('Facebook')}><Ic.FB/></a>
+                <a href="https://www.instagram.com/alarkpurisangam/" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={()=>showToast('Opening Instagram @alarkpurisangam','info')}><Ic.IG/></a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={()=>handleSocial('YouTube')}><Ic.YT/></a>
+                <a href="https://wa.me/918737906519" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={handleWA}><Ic.WA/></a>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER - premium */}
-      <footer className="footer">
-        <div className="footer-top-border"/>
-        <div className="container footer-inner">
-          {/* Stats Row */}
-          <div className="footer-stats-row">
-            {[{num:"15+",label:"Luxury Rooms"},{num:"500+",label:"Events Hosted"},{num:"10K+",label:"Happy Guests"},{num:"0.5km",label:"From Sangam"}].map(s=>(
-              <div key={s.label} className="footer-stat">
-                <span className="footer-stat-num">{s.num}</span>
-                <span className="footer-stat-label">{s.label}</span>
+      {/* ── FOOTER ── */}
+      <footer className="ft">
+        <div className="ft-tb"/>
+        <div className="ctr ft-in">
+          <div className="ft-sr">
+            {[{n:"15+",l:"Luxury Rooms"},{n:"500+",l:"Events Hosted"},{n:"10K+",l:"Happy Guests"},{n:"0.5km",l:"From Sangam"}].map(s=>(
+              <div key={s.l} className="ft-st">
+                <span className="ft-sn">{s.n}</span>
+                <span className="ft-sl">{s.l}</span>
               </div>
             ))}
           </div>
-
-          <div className="footer-grid">
+          <div className="ft-grid">
             <div>
-              <div className="footer-brand-title">ALARKPURI SANGAM</div>
-              <div className="footer-brand-sub">Resort & Restaurant · Est. Prayagraj</div>
-              <p className="footer-brand-desc">A serene luxury retreat beside the sacred Triveni Sangam — an unforgettable blend of spirituality, nature, and modern indulgence in the heart of Prayagraj.</p>
-              <div className="footer-social">
-                <a href="#" className="social-btn"><Icon.FB/></a>
-                <a href="https://www.instagram.com/alarkpurisangam/" className="social-btn" target="_blank" rel="noopener noreferrer"><Icon.IG/></a>
-                <a href="#" className="social-btn"><Icon.YT/></a>
-                <a href="https://wa.me/918737906519" className="social-btn" target="_blank" rel="noopener noreferrer"><Icon.WhatsApp/></a>
+              <div className="ft-bt">ALARKPURI SANGAM</div>
+              <div className="ft-bs">Resort & Restaurant · Est. Prayagraj</div>
+              <p className="ft-bd">A serene luxury retreat beside the sacred Triveni Sangam — an unforgettable blend of spirituality, nature, and modern indulgence in the heart of Prayagraj.</p>
+              <div className="ft-soc">
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={()=>handleSocial('Facebook')}><Ic.FB/></a>
+                <a href="https://www.instagram.com/alarkpurisangam/" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={()=>showToast('Opening Instagram @alarkpurisangam','info')}><Ic.IG/></a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={()=>handleSocial('YouTube')}><Ic.YT/></a>
+                <a href="https://wa.me/918737906519" target="_blank" rel="noopener noreferrer" className="s-btn" onClick={handleWA}><Ic.WA/></a>
               </div>
-              <div className="footer-awards">
-                <div className="footer-award-badge">
-                  <Icon.Award/>
-                  <div className="footer-award-badge-text">BEST RESORT<br/>PRAYAGRAJ 2024</div>
-                </div>
-                <div className="footer-award-badge">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                  <div className="footer-award-badge-text">TRAVELLERS<br/>CHOICE 2025</div>
+              <div className="ft-aw">
+                <div className="ft-a"><Ic.Aw/><div className="ft-at">BEST RESORT<br/>PRAYAGRAJ 2024</div></div>
+                <div className="ft-a">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <div className="ft-at">TRAVELLERS<br/>CHOICE 2025</div>
                 </div>
               </div>
             </div>
             <div>
-              <div className="footer-col-title">Navigation</div>
-              <ul className="footer-links">
-                {navSections.map(s=><li key={s}><a href={`#${s}`} onClick={e=>{e.preventDefault();scrollTo(s);}}>{s.charAt(0).toUpperCase()+s.slice(1)}</a></li>)}
+              <div className="ft-ct">Navigation</div>
+              <ul className="ft-lks">
+                {navSecs.map(s=>(
+                  <li key={s}><a href={`#${s}`} onClick={e=>{e.preventDefault();scrollTo(s);}}>{s[0].toUpperCase()+s.slice(1)}</a></li>
+                ))}
               </ul>
             </div>
             <div>
-              <div className="footer-col-title">Facilities</div>
-              <ul className="footer-links">
-                {["Luxury Cottages","Banquet Hall","Fine Dining","24×7 Room Service","Valet Parking","Wellness Spa","Spiritual Tours","Event Planning"].map(f=><li key={f}><a href="#">{f}</a></li>)}
+              <div className="ft-ct">Facilities</div>
+              <ul className="ft-lks">
+                {["Luxury Cottages","Banquet Hall","Fine Dining","24×7 Room Service","Valet Parking","Wellness Spa","Spiritual Tours","Event Planning"].map(f=>(
+                  <li key={f}><a href="#" onClick={e=>{e.preventDefault();scrollTo('booking');showToast(`Enquiring about: ${f}`,'info');}}>{f}</a></li>
+                ))}
               </ul>
             </div>
             <div>
-              <div className="footer-col-title">Contact Us</div>
-              <p style={{fontSize:13.5,color:'var(--text-mid)',lineHeight:2.0,marginBottom:20}}>
-                Arazi No-84, Arail Kachhar<br/>
-                Naini, Prayagraj - 211008<br/>
-                Uttar Pradesh, India
+              <div className="ft-ct">Contact Us</div>
+              <p style={{fontSize:13.5,color:'var(--text-mid)',lineHeight:2,marginBottom:20}}>
+                Arazi No-84, Arail Kachhar<br/>Naini, Prayagraj - 211008<br/>Uttar Pradesh, India
               </p>
-              <a href="tel:+918737906519" style={{display:'flex',alignItems:'center',gap:10,textDecoration:'none',marginBottom:10}}>
-                <span style={{color:'var(--gold)',fontSize:14,fontFamily:"'Cinzel',serif",letterSpacing:1}}>+91 8737906519</span>
-              </a>
-              <a href="mailto:alarkpurisangam1@gmail.com" style={{display:'block',fontSize:13,color:'var(--text-mid)',textDecoration:'none',transition:'color 0.3s',marginBottom:32}}>
-                alarkpurisangam1@gmail.com
-              </a>
-              <div className="footer-newsletter">
-                <div className="footer-newsletter-title">Stay Updated</div>
-                <div className="footer-newsletter-form">
-                  <input className="footer-newsletter-input" type="email" placeholder="Your email address"/>
-                  <button className="footer-newsletter-btn">Subscribe</button>
-                </div>
-              </div>
+              <a href="tel:+918737906519" style={{display:'block',color:'var(--gold)',fontSize:14,fontFamily:"'Cinzel',serif",letterSpacing:1,textDecoration:'none',marginBottom:10}} onClick={()=>showToast('Calling +91 8737906519...','success')}>+91 8737906519</a>
+              <a href="mailto:alarkpurisangam1@gmail.com" style={{display:'block',fontSize:13,color:'var(--text-mid)',textDecoration:'none',marginBottom:32}} onClick={()=>showToast('Opening email client...','info')}>alarkpurisangam1@gmail.com</a>
+              <div className="ft-nlt">Stay Updated</div>
+              <form className="ft-nlf" onSubmit={handleNL}>
+                <input className="ft-nli" type="email" placeholder="Your email address" value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/>
+                <button type="submit" className="ft-nlb">Subscribe</button>
+              </form>
             </div>
           </div>
-          <div className="footer-divider"/>
-          <div className="footer-bottom">
-            <div className="footer-bottom-text">&copy; 2026 <span>Alarkpuri Sangam Resort</span>. All rights reserved.</div>
-            <div className="footer-bottom-links">
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms & Conditions</a>
-              <a href="#">Sitemap</a>
+          <div className="ft-div"/>
+          <div className="ft-bot">
+            <div className="ft-bxt">&copy; 2026 <span>Alarkpuri Sangam Resort</span>. All rights reserved.</div>
+            <div className="ft-bls">
+              <a href="#" onClick={e=>{e.preventDefault();showToast('Privacy Policy — coming soon.','info');}}>Privacy Policy</a>
+              <a href="#" onClick={e=>{e.preventDefault();showToast('Terms & Conditions — coming soon.','info');}}>Terms & Conditions</a>
+              <a href="#" onClick={e=>{e.preventDefault();showToast('Sitemap — coming soon.','info');}}>Sitemap</a>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Muted WhatsApp button */}
-      <a href="https://wa.me/918737906519" className="whatsapp-float" target="_blank" rel="noopener noreferrer" title="Chat on WhatsApp">
-        <Icon.WhatsApp/>
+      {/* ── WHATSAPP ── */}
+      <a href="https://wa.me/918737906519" className="wa-fl" target="_blank" rel="noopener noreferrer" title="Chat on WhatsApp" onClick={handleWA}>
+        <Ic.WA/>
       </a>
 
-      {/* Back to top - hidden on mobile via CSS */}
-      <button className={`back-to-top ${showTop?'visible':''}`} onClick={()=>window.scrollTo({top:0,behavior:'smooth'})} title="Back to top">
-        <Icon.ChevronUp/>
+      {/* ── BACK TO TOP ── */}
+      <button className={`btt ${showTop?'vis':''}`} onClick={()=>{window.scrollTo({top:0,behavior:'smooth'});showToast('Back to top!','info');}} title="Back to top">
+        <Ic.Up/>
       </button>
-
-      <div className={`toast ${toast?'show':''}`}>Reservation request sent successfully</div>
     </>
   );
 }
