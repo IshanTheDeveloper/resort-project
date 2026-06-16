@@ -37,9 +37,9 @@ const IMG = {
    every extra import above (pic6, pic7, ...). */
 const galleryPhotos = [
   { l: "The Resort",    i: pic1 },
-  { l: "Wedding Mandap", i: pic2 },
-  { l: "Dining Area",  i: pic3 },
-  { l: "Event Walkway",  i: pic4 },
+  { l: "Event Walkway", i: pic2 },
+  { l: "Wedding Mandap",  i: pic3 },
+  { l: "Dining Area",  i: pic4 },
   { l: "Luxury Cottage Area",    i: pic5 },
 ];
 
