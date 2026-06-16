@@ -57,7 +57,31 @@ body {
   width:100%;
   overflow-x:hidden;
 }
+@media (max-width:768px){
 
+  .h-acts{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    gap:20px;
+  }
+
+  .btn-p,
+  .btn-o{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    width:90%;
+    max-width:320px;
+
+    margin:0 auto;
+    text-align:center;
+  }
+
+}
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700&family=Jost:wght@300;400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -131,7 +155,47 @@ body{font-family:'Jost',sans-serif;background:var(--g1);color:var(--cream);overf
 .h-acts{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;animation:hfu 1.2s cubic-bezier(.4,0,.2,1) .74s both}
 @keyframes hfd{from{opacity:0;transform:translateY(-32px)}to{opacity:1;transform:translateY(0)}}
 @keyframes hfu{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
-.h-scr{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;z-index:5;animation:hfu 1s ease 1.4s both}
+@media (max-width:768px){
+
+  .h-scr{
+    position:absolute;
+    left:50%;
+
+    bottom:20px;
+
+    transform:translateX(-50%);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+    flex-direction:column;
+
+    width:auto;
+
+    z-index:10;
+  }
+
+}
+
+@media (max-width:768px){
+
+  .h-cnt{
+    width:100%;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    text-align:center;
+  }
+
+}
 .h-scr-lbl{font-size:8.5px;letter-spacing:5px;color:var(--gold);opacity:.8;text-transform:uppercase}
 .h-scr-line{width:1px;height:52px;background:rgba(217,179,106,.18);position:relative;overflow:hidden}
 .h-scr-fill{position:absolute;top:-100%;width:100%;height:100%;background:linear-gradient(to bottom,transparent,var(--gold-light),var(--gold));animation:sd 2.4s cubic-bezier(.4,0,.2,1) infinite}
