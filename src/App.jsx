@@ -44,6 +44,20 @@ const galleryPhotos = [
 ];
 
 const css = `
+
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#root{
+  width:100%;
+  overflow-x:hidden;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700&family=Jost:wght@300;400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -313,7 +327,12 @@ section{padding:120px 0}
 .ts-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(217,179,106,.05) 0%,transparent 60%);pointer-events:none}
 .ts-outer{position:relative;overflow:hidden}
 .ts-track{display:flex;transition:transform .9s cubic-bezier(.4,0,.2,1);will-change:transform}
-.ts-card{min-width:100%;flex-shrink:0;background:var(--g4);border:1px solid rgba(217,179,106,.14);padding:56px 64px;position:relative;overflow:hidden}
+.ts-card{
+ min-width:100%;
+ width:100%;
+ box-sizing:border-box;
+ padding:56px 64px;
+}
 .ts-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-left:1px solid rgba(217,179,106,.16);border-bottom:1px solid rgba(217,179,106,.16)}
 .ts-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--accent),transparent)}
 .ts-q{font-family:'Cormorant Garamond',serif;font-size:90px;color:var(--gold);opacity:.22;line-height:.4;margin-bottom:24px;display:block}
@@ -1318,14 +1337,29 @@ export default function AlarkpuriResort(){
                     <div className="f-grp">
                       <label className="f-lbl">Room Type</label>
                       <select className="f-sel" value={form.roomType} onChange={e=>setForm({...form,roomType:e.target.value})}>
-                        <option value="premium">Premium Suite — ₹10,500</option>
-                        <option value="luxury">Luxury Suite — ₹11,500</option>
-                        <option value="cottage">Nature Cottage — ₹8,500</option>
-                        <option value="riverside">Riverside Room — ₹9,200</option>
-                        <option value="villa">Heritage Villa — ₹14,000</option>
-                        <option value="chalet">Forest Chalet — ₹7,800</option>
-                        <option value="royal">Royal Chamber — ₹13,500</option>
-                        <option value="garden">Garden Suite — ₹9,800</option>
+                         <option value="Ganga Couple Room">
+    Ganga Couple Room - ₹2,000/Night
+  </option>
+
+  <option value="Ganga Deluxe Couple Room">
+    Ganga Deluxe Couple Room - ₹2,500/Night
+  </option>
+
+  <option value="Yamuna Family Room">
+    Yamuna Family Room - ₹3,000/Night
+  </option>
+
+  <option value="Yamuna Deluxe Family Room">
+    Yamuna Deluxe Family Room - ₹3,500/Night
+  </option>
+
+  <option value="Saraswati Family Suite">
+    Saraswati Family Suite - ₹4,000/Night
+  </option>
+
+  <option value="Saraswati Premium Suite">
+    Saraswati Premium Suite - ₹4,500/Night
+  </option>
                       </select>
                     </div>
                     <div className="f-grp">
