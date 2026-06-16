@@ -730,6 +730,268 @@ section{padding:120px 0}
     letter-spacing:4px;
   }
 }
+/* ===== Custom Dining Note ===== */
+
+.menu-note{
+
+  width:fit-content;
+
+  max-width:820px;
+
+  margin:38px auto 0;
+
+  padding:14px 24px;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  gap:12px;
+
+  border-radius:999px;
+
+  border:1px solid rgba(217,179,106,.18);
+
+  background:rgba(217,179,106,.06);
+
+  backdrop-filter:blur(8px);
+
+  animation:menuFloat 5s ease-in-out infinite;
+}
+
+/* icon */
+
+.menu-note-icon{
+
+  color:var(--g1);
+
+  font-size:16px;
+
+  animation:menuPulse 2.5s ease-in-out infinite;
+}
+
+/* text */
+
+.menu-note p{
+
+  margin:0;
+
+  color:rgba(255,255,255,.85);
+
+  font-size:14px;
+
+  font-weight:500;
+
+  line-height:1.6;
+}
+
+/* subtle hover */
+
+.menu-note:hover{
+
+  transform:translateY(-3px);
+
+  border-color:rgba(217,179,106,.4);
+
+  transition:.3s ease;
+}
+
+/* animations */
+
+@keyframes menuFloat{
+
+  0%,100%{
+
+    transform:translateY(0);
+  }
+
+  50%{
+
+    transform:translateY(-4px);
+  }
+
+}
+
+@keyframes menuPulse{
+
+  0%,100%{
+
+    opacity:.7;
+
+    transform:scale(1);
+  }
+
+  50%{
+
+    opacity:1;
+
+    transform:scale(1.18);
+  }
+
+}
+
+/* mobile */
+
+@media(max-width:768px){
+
+  .menu-note{
+
+    width:92%;
+
+    border-radius:20px;
+
+    padding:14px 18px;
+
+    text-align:center;
+  }
+
+  .menu-note p{
+
+    font-size:13px;
+  }
+
+}
+
+.view-more-wrap{
+  display:flex;
+  justify-content:center;
+  margin-top:30px;
+}
+
+.menu-view-btn{
+  background:linear-gradient(
+    135deg,
+    var(--gold),
+    var(--gold-light)
+  );
+
+  color:#1A1306;
+  border:none;
+  padding:14px 32px;
+  cursor:pointer;
+
+  font-family:'Cinzel',serif;
+  letter-spacing:2px;
+
+  transition:.35s ease;
+}
+
+.menu-view-btn:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 30px rgba(217,179,106,.35);
+}
+
+.chef-note{
+  position:relative;
+  overflow:hidden;
+
+  display:flex;
+  align-items:center;
+  gap:20px;
+
+  padding:24px;
+  margin:30px 0;
+
+  border:1px solid rgba(217,179,106,.2);
+
+  background:linear-gradient(
+    135deg,
+    rgba(217,179,106,.08),
+    rgba(82,201,140,.04)
+  );
+
+  backdrop-filter:blur(10px);
+
+  animation:chefFloat 5s ease-in-out infinite;
+}
+
+.chef-note:hover{
+  transform:translateY(-4px);
+  box-shadow:0 20px 40px rgba(0,0,0,.3);
+}
+
+.chef-note-glow{
+  position:absolute;
+  width:250px;
+  height:250px;
+
+  top:-50%;
+  left:-20%;
+
+  background:radial-gradient(
+    circle,
+    rgba(217,179,106,.15),
+    transparent 70%
+  );
+
+  animation:chefGlow 6s ease-in-out infinite;
+}
+
+.chef-note-icon{
+  width:70px;
+  height:70px;
+
+  border-radius:50%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:28px;
+
+  background:rgba(217,179,106,.1);
+  border:1px solid rgba(217,179,106,.25);
+
+  flex-shrink:0;
+}
+
+.chef-note-label{
+  display:block;
+
+  margin-bottom:10px;
+
+  font-size:10px;
+  letter-spacing:3px;
+
+  color:var(--gold);
+
+  font-family:'Cinzel',serif;
+}
+
+.chef-note-content p{
+  margin:0;
+  line-height:1.8;
+}
+
+@keyframes chefFloat{
+  0%,100%{
+    transform:translateY(0);
+  }
+
+  50%{
+    transform:translateY(-4px);
+  }
+}
+
+@keyframes chefGlow{
+  0%,100%{
+    opacity:.5;
+  }
+
+  50%{
+    opacity:1;
+  }
+}
+
+@media(max-width:768px){
+  .chef-note{
+    flex-direction:column;
+    text-align:center;
+  }
+}
+
 `;
 
 /* ── DATA ── */
@@ -876,30 +1138,177 @@ const amenities = [
 ];
 
 const menuItems = {
-  veg:[
-    {name:"Prayagraj Thali",   desc:"12-course traditional meal with seasonal vegetables",price:"₹850"},
-    {name:"River Herb Risotto",desc:"Seasonal herbs, truffle oil, parmesan crisp",price:"₹680"},
-    {name:"Dal Baati Churma",  desc:"Rajasthani classic, slow-cooked with pure ghee",price:"₹520"},
-    {name:"Masala Dosa Royale",desc:"Crispy fermented crepe, spiced potato filling",price:"₹420"},
-    {name:"Paneer Makhani",    desc:"Cottage cheese in creamy tomato-cashew gravy",price:"₹580"},
-    {name:"Kadhai Sabzi",      desc:"Garden-fresh vegetables, village spices",price:"₹460"},
+
+  veg: [
+
+    {
+      name:"Alkapuri Special Dosa",
+      desc:"Our signature crispy dosa served with flavourful fillings, fresh chutneys and authentic sambhar.",
+      price:"₹199"
+    },
+
+    {
+      name:"Paneer Butter Masala",
+      desc:"Soft cottage cheese cubes cooked in a rich buttery tomato gravy with aromatic spices.",
+      price:"₹199"
+    },
+
+    {
+      name:"Kadai Paneer",
+      desc:"Fresh paneer tossed with bell peppers, onions and traditional Indian spices.",
+      price:"₹199"
+    },
+
+    {
+      name:"Shahi Paneer",
+      desc:"Royal paneer delicacy cooked in a creamy cashew-based gravy.",
+      price:"₹180"
+    },
+
+    {
+      name:"Malai Kofta",
+      desc:"Soft vegetable dumplings served in a smooth and luxurious cream gravy.",
+      price:"₹180"
+    },
+
+    {
+      name:"Mix Veg",
+      desc:"Farm-fresh seasonal vegetables cooked with house special spices.",
+      price:"₹180"
+    },
+
+    {
+      name:"Veg Biryani",
+      desc:"Fragrant basmati rice layered with vegetables and aromatic herbs.",
+      price:"₹120"
+    },
+
+    {
+      name:"Veg Pulao",
+      desc:"Lightly spiced rice preparation with fresh vegetables and herbs.",
+      price:"₹120"
+    },
+
+    {
+      name:"Chole Bhature",
+      desc:"Classic North Indian chickpea curry served with fluffy fried bread.",
+      price:"₹70"
+    },
+
+    {
+      name:"Masala Dosa",
+      desc:"Golden crispy dosa stuffed with seasoned potato masala.",
+      price:"₹80"
+    },
+
+    {
+      name:"Paneer Pizza",
+      desc:"Cheesy pizza topped with marinated paneer and fresh vegetables.",
+      price:"₹120"
+    },
+
+    {
+      name:"Veg Club Sandwich",
+      desc:"Triple layered sandwich loaded with fresh vegetables and sauces.",
+      price:"₹99"
+    },
+
+    {
+      name:"Veg Fried Rice",
+      desc:"Wok tossed rice with vegetables and oriental flavours.",
+      price:"₹99"
+    },
+
+    {
+      name:"Chilli Paneer",
+      desc:"Popular Indo-Chinese paneer tossed in spicy garlic sauce.",
+      price:"₹130"
+    },
+
+    {
+      name:"Honey Chilli Potato",
+      desc:"Crispy potatoes glazed with honey and spicy seasonings.",
+      price:"₹99"
+    }
+
   ],
-  nonveg:[
-    {name:"Lucknowi Biryani",  desc:"Dum-cooked basmati, aromatic whole spices, raita",price:"₹980"},
-    {name:"Tandoori Pomfret",  desc:"Fresh river catch, overnight marinade, ajwain",price:"₹1,200"},
-    {name:"Butter Chicken",    desc:"Classic creamy tomato sauce, house-made naan",price:"₹750"},
-    {name:"Mutton Raan",       desc:"Slow-roasted whole leg, 12-hour Awadhi dum",price:"₹1,400"},
-    {name:"Galauti Kebab",     desc:"Melt-in-mouth minced lamb, ulta tawa paratha",price:"₹860"},
-    {name:"Maachli Fry",       desc:"Gangetic fish, turmeric-mustard batter, chutney",price:"₹680"},
-  ],
-  beverages:[
-    {name:"Sangam Sunrise",    desc:"Fresh mango, saffron, ginger, lime fizz",price:"₹280"},
-    {name:"Rose Lassi",        desc:"Thick yogurt, Kannauj rose water, pistachios",price:"₹220"},
-    {name:"Masala Chai",       desc:"House blend, green cardamom, cinnamon, ginger",price:"₹180"},
-    {name:"Thandai Special",   desc:"Festival drink, mixed nuts, spices, chilled milk",price:"₹320"},
-    {name:"Aam Panna",         desc:"Raw mango, black salt, cumin, mint",price:"₹200"},
-    {name:"Nimbu Sharbat",     desc:"Fresh lemon, black salt, sabja seeds",price:"₹160"},
-  ],
+
+  beverages: [
+
+    {
+      name:"Tea",
+      desc:"Freshly brewed tea prepared with premium tea leaves and aromatic spices.",
+      price:"₹20"
+    },
+
+    {
+      name:"Coffee",
+      desc:"Classic hot coffee made from freshly brewed beans.",
+      price:"₹30"
+    },
+
+    {
+      name:"Cold Coffee",
+      desc:"Smooth chilled coffee blended to perfection.",
+      price:"₹80"
+    },
+
+    {
+      name:"Cold Coffee With Ice Cream",
+      desc:"Rich cold coffee topped with creamy ice cream.",
+      price:"₹99"
+    },
+
+    {
+      name:"Lassi",
+      desc:"Traditional refreshing yogurt-based drink served chilled.",
+      price:"₹50"
+    },
+
+    {
+      name:"Banana Shake",
+      desc:"Fresh banana blended into a creamy refreshing shake.",
+      price:"₹50"
+    },
+
+    {
+      name:"Date Shake",
+      desc:"Healthy and naturally sweet date milkshake.",
+      price:"₹80"
+    },
+
+    {
+      name:"Strawberry Shake",
+      desc:"Creamy strawberry milkshake prepared with fresh flavours.",
+      price:"₹70"
+    },
+
+    {
+      name:"Black Currant Shake",
+      desc:"Refreshing berry flavoured shake with rich taste.",
+      price:"₹70"
+    },
+
+    {
+      name:"Blood Orange Shake",
+      desc:"Citrusy and refreshing orange flavoured milkshake.",
+      price:"₹70"
+    },
+
+    {
+      name:"Mango Shake",
+      desc:"Seasonal mango shake prepared with fresh mango pulp.",
+      price:"₹70"
+    },
+
+    {
+      name:"Orange Shake",
+      desc:"Cool and refreshing orange flavoured beverage.",
+      price:"₹70"
+    }
+
+  ]
+
 };
 
 const attractions = [
@@ -967,6 +1376,7 @@ export default function AlarkpuriResort(){
   const [scrolled,setScrolled] = useState(false);
   const [menuOpen,setMenuOpen] = useState(false);
   const [activeMenu,setActiveMenu] = useState('veg');
+  const [showAllMenu, setShowAllMenu] = useState(false);
   const [showTop,setShowTop] = useState(false);
   const [slideIdx,setSlideIdx] = useState(0);
   const [progress,setProgress] = useState(0);
@@ -1041,6 +1451,11 @@ export default function AlarkpuriResort(){
   const testNext = ()=>{ clearInterval(testTimerRef.current); setTestIdx(i=>Math.min(testimonials.length-1,i+1)); };
 
   const attractDbl = [...attractions,...attractions];
+
+  const handleMenuTab = (tab) => {
+  setActiveMenu(tab);
+  setShowAllMenu(false);
+};
 
   return(
     <>
@@ -1267,23 +1682,56 @@ export default function AlarkpuriResort(){
             </div>
             <div className="rr" style={{transitionDelay:'.15s'}}>
               <div className="m-tabs">
-                {['veg','nonveg','beverages'].map(tab=>(
-                  <button key={tab} className={`m-tab ${activeMenu===tab?'act':''}`} onClick={()=>setActiveMenu(tab)}>
+                {['veg','beverages'].map(tab=>(
+                  <button key={tab} className={`m-tab ${activeMenu===tab?'act':''}`} onClick={()=>handleMenuTab(tab)}>
                     {tab==='veg'?'Vegetarian':tab==='nonveg'?'Non-Veg':'Beverages'}
                   </button>
                 ))}
               </div>
+             <div className="chef-note">
+  <div className="chef-note-glow"></div>
+
+  <div className="chef-note-icon">
+    👨‍🍳
+  </div>
+
+  <div className="chef-note-content">
+    <span className="chef-note-label">
+      CHEF'S SPECIAL SERVICE
+    </span>
+
+    <p>
+  Customized vegetarian dishes and beverages, crafted to suit your taste and dining preferences.
+</p>
+  </div>
+</div>
+             
+             
               <div className="m-items">
-                {menuItems[activeMenu].map((item,i)=>(
-                  <div key={item.name} className="m-item">
-                    <div>
-                      <div className="m-in">{item.name}</div>
-                      <div className="m-id">{item.desc}</div>
-                    </div>
-                    <div className="m-ip">{item.price}</div>
-                  </div>
-                ))}
-              </div>
+  {(showAllMenu
+    ? menuItems[activeMenu]
+    : menuItems[activeMenu].slice(0, 10)
+  ).map((item, i) => (
+    <div key={item.name} className="m-item">
+      <div>
+        <div className="m-in">{item.name}</div>
+        <div className="m-id">{item.desc}</div>
+      </div>
+      <div className="m-ip">{item.price}</div>
+    </div>
+  ))}
+</div>
+
+              {menuItems[activeMenu].length > 10 && (
+  <div className="view-more-wrap">
+    <button
+      className="menu-view-btn"
+      onClick={() => setShowAllMenu(!showAllMenu)}
+    >
+      {showAllMenu ? "Show Less" : "View More"}
+    </button>
+  </div>
+)}
             </div>
           </div>
           <SecScroll to="attractions"/>
