@@ -992,6 +992,84 @@ section{padding:120px 0}
   }
 }
 
+.gallery-modal{
+  position:fixed;
+  inset:0;
+
+  z-index:99999;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  background:rgba(0,0,0,.92);
+
+  animation:fadeGallery .3s ease;
+}
+
+.gallery-modal-img{
+  max-width:92%;
+  max-height:92vh;
+
+  object-fit:contain;
+
+  border-radius:12px;
+
+  box-shadow:0 25px 80px rgba(0,0,0,.6);
+
+  animation:zoomGallery .3s ease;
+}
+
+.gallery-modal-close{
+  position:absolute;
+
+  top:24px;
+  right:24px;
+
+  width:52px;
+  height:52px;
+
+  border:none;
+  border-radius:50%;
+
+  cursor:pointer;
+
+  font-size:24px;
+
+  color:#fff;
+
+  background:rgba(255,255,255,.12);
+
+  backdrop-filter:blur(10px);
+
+  transition:.3s ease;
+}
+
+.gallery-modal-close:hover{
+  transform:rotate(90deg);
+  background:rgba(255,255,255,.22);
+}
+
+.gl-item{
+  cursor:pointer;
+}
+
+@keyframes fadeGallery{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+@keyframes zoomGallery{
+  from{
+    opacity:0;
+    transform:scale(.92);
+  }
+  to{
+    opacity:1;
+    transform:scale(1);
+  }
+}
+
 `;
 
 /* ── DATA ── */
@@ -1385,7 +1463,7 @@ export default function AlarkpuriResort(){
   const [nlEmail,setNlEmail] = useState('');
   const [toasts,setToasts] = useState([]);
   const [form,setForm] = useState({name:'',email:'',phone:'',checkin:'',checkout:'',guests:'2',roomType:'premium',message:''});
-
+const [selectedImage, setSelectedImage] = useState(null);
   const timerRef=useRef(null), rafRef=useRef(null), startRef=useRef(null), testTimerRef=useRef(null);
   const toastIdRef = useRef(0);
   useReveal();
@@ -1750,19 +1828,54 @@ export default function AlarkpuriResort(){
         <div className="ctr">
           <div className="gl-grid rv">
             {galleryPhotos.map((g,i)=>(
-              <div key={i} className="gl-item">
-                <img src={g.i} alt={g.l} loading="lazy"/>
-                <div className="gl-ov">
-                  <div style={{textAlign:'center'}}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1.4" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-                    <div className="gl-lbl">{g.l}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+  <div
+    key={i}
+    className="gl-item"
+    onClick={() => setSelectedImage(g.i)}
+  >
+    <img src={g.i} alt={g.l} loading="lazy"/>
+
+    <div className="gl-ov">
+      <div style={{textAlign:'center'}}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1.4" strokeLinecap="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+
+        <div className="gl-lbl">{g.l}</div>
+      </div>
+    </div>
+  </div>
+))}
           </div>
         </div>
       </section>
+
+      {selectedImage && (
+  <div
+    className="gallery-modal"
+    onClick={() => setSelectedImage(null)}
+  >
+    <button
+      className="gallery-modal-close"
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedImage(null);
+      }}
+    >
+      ✕
+    </button>
+
+    <img
+      src={selectedImage}
+      alt="Gallery"
+      className="gallery-modal-img"
+      onClick={(e) => e.stopPropagation()}
+    />
+  </div>
+)}
 
       {/* ── ATTRACTIONS INFINITE SCROLL ── */}
       <section id="attractions" className="at-sec">
